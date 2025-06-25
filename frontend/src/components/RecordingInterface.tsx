@@ -7,10 +7,12 @@ type RecordingState = 'idle' | 'recording' | 'paused' | 'processing'
 
 interface RecordingInterfaceProps {
   onRecordingComplete?: (audioBlob: Blob) => void
+  disabled?: boolean
 }
 
 export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
-  onRecordingComplete
+  onRecordingComplete,
+  disabled = false
 }) => {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle')
   const [recordingTime, setRecordingTime] = useState(0)
@@ -255,7 +257,7 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
               recordingState === 'paused' ? resumeRecording :
               undefined
             }
-            disabled={recordingState === 'processing'}
+            disabled={recordingState === 'processing' || disabled}
             className={`
               w-16 h-16 rounded-full text-white font-semibold
               flex items-center justify-center
