@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from .database import engine, get_db
@@ -14,6 +14,9 @@ from .schemas import (
 )
 
 app = FastAPI(title="Voice Diary API", version="0.1.0")
+
+# JST (UTC+9) タイムゾーン定義
+JST = timezone(timedelta(hours=9))
 
 # データベーステーブル作成
 Base.metadata.create_all(bind=engine)
@@ -52,7 +55,7 @@ async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_d
     
     # ユニークなファイル名生成
     file_id = str(uuid.uuid4())
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(JST).strftime("%Y%m%d_%H%M%S")
     file_extension = ".webm"  # WebRTCからの録音はwebm形式
     filename = f"{timestamp}_{file_id}{file_extension}"
     file_path = UPLOAD_DIR / filename
@@ -82,49 +85,117 @@ async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_d
         "filename": filename,
         "file_path": str(file_path),
         "file_size": len(file_content),
-        "upload_time": datetime.now().isoformat(),
+        "upload_time": datetime.now(JST).isoformat(),
         "message": "音声ファイルのアップロードが完了しました"
     }
 
 @app.post("/api/transcribe", response_model=TranscribeResponse)
-async def transcribe_audio(request: TranscribeRequest):
-    # モック文字起こし機能（TODO: 実際のWhisper APIに置き換え）
+async def transcribe_audio(request: TranscribeRequest, db: Session = Depends(get_db)):
+    # file_idに対応するDiaryEntryを見つける
+    entry = db.query(DiaryEntry).filter(DiaryEntry.file_id == request.file_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="対応する日記エントリが見つかりません")
+    
+    # タスクIDを生成してDiaryEntryに保存
+    task_id = str(uuid.uuid4())
+    entry.transcription_task_id = task_id
+    entry.transcription_status = "processing"
+    
+    db.commit()
+    
     return {
-        "task_id": str(uuid.uuid4()),
+        "task_id": task_id,
         "file_id": request.file_id,
         "status": "processing",
         "message": "文字起こし処理を開始しました"
     }
 
 @app.get("/api/transcribe/{task_id}", response_model=TranscribeResultResponse)
-async def get_transcription_result(task_id: str):
-    # モック文字起こし結果（TODO: 実際の処理結果に置き換え）
+async def get_transcription_result(task_id: str, db: Session = Depends(get_db)):
+    # task_idに対応するDiaryEntryを見つける
+    entry = db.query(DiaryEntry).filter(DiaryEntry.transcription_task_id == task_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="対応するタスクが見つかりません")
+    
+    # モック文字起こし結果を生成してDiaryEntryに保存
+    mock_transcription = "これはモック文字起こし結果です。実際の音声から生成された文字起こしテキストがここに表示されます。本日は充実した一日でした。朝から晩まで様々な活動に取り組み、多くのことを学ぶことができました。"
+    
+    entry.transcription = mock_transcription
+    entry.transcription_status = "completed"
+    entry.transcribe_model = "mock-whisper-v1"
+    entry.updated_at = datetime.now(JST)
+    
+    db.commit()
+    
     return {
         "task_id": task_id,
         "status": "completed",
-        "transcription": "これはモック文字起こし結果です。実際の音声から生成された文字起こしテキストがここに表示されます。",
+        "transcription": mock_transcription,
         "confidence": 0.95,
-        "completed_at": datetime.now().isoformat()
+        "completed_at": datetime.now(JST).isoformat()
     }
 
 @app.post("/api/summarize", response_model=SummarizeResponse)
-async def summarize_text(request: SummarizeRequest):
-    # モック要約機能（TODO: 実際のLLM APIに置き換え）
+async def summarize_text(request: SummarizeRequest, db: Session = Depends(get_db)):
+    # entry_idが指定されている場合、対応するDiaryEntryを見つける
+    entry = None
+    if request.entry_id:
+        entry = db.query(DiaryEntry).filter(DiaryEntry.id == request.entry_id).first()
+        if not entry:
+            raise HTTPException(status_code=404, detail="対応する日記エントリが見つかりません")
+    
+    # タスクIDを生成
+    task_id = str(uuid.uuid4())
+    
+    # DiaryEntryがある場合はタスクIDを保存
+    if entry:
+        entry.summary_task_id = task_id
+        entry.summary_status = "processing"
+        db.commit()
+    
     return {
-        "task_id": str(uuid.uuid4()),
+        "task_id": task_id,
         "text": request.text,
         "status": "processing",
         "message": "要約処理を開始しました"
     }
 
 @app.get("/api/summarize/{task_id}", response_model=SummarizeResultResponse)
-async def get_summary_result(task_id: str):
-    # モック要約結果（TODO: 実際の処理結果に置き換え）
+async def get_summary_result(task_id: str, db: Session = Depends(get_db)):
+    # task_idに対応するDiaryEntryを見つける
+    entry = db.query(DiaryEntry).filter(DiaryEntry.summary_task_id == task_id).first()
+    if not entry:
+        # DiaryEntryが見つからない場合でも、モック結果を返す（スタンドアロン要約の場合）
+        return {
+            "task_id": task_id,
+            "status": "completed",
+            "summary": "本日の主な出来事や感想を簡潔にまとめた要約文がここに表示されます。",
+            "completed_at": datetime.now(JST).isoformat()
+        }
+    
+    # モック要約結果を生成してDiaryEntryに保存
+    mock_summary = "今日は充実した一日でした。様々な活動を通じて多くの学びを得ることができ、個人的な成長を感じています。明日もこの調子で頑張りたいと思います。"
+    
+    # タイトルも自動生成（要約の最初の部分から）
+    auto_title = mock_summary[:20] + "..." if len(mock_summary) > 20 else mock_summary
+    
+    entry.summary = mock_summary
+    entry.summary_status = "completed"
+    entry.summary_model = "mock-gpt-4o-mini"
+    
+    # タイトルが未設定の場合は自動生成
+    if not entry.title:
+        entry.title = auto_title
+    
+    entry.updated_at = datetime.now(JST)
+    
+    db.commit()
+    
     return {
         "task_id": task_id,
         "status": "completed",
-        "summary": "本日の主な出来事や感想を簡潔にまとめた要約文がここに表示されます。",
-        "completed_at": datetime.now().isoformat()
+        "summary": mock_summary,
+        "completed_at": datetime.now(JST).isoformat()
     }
 
 # 日記エントリCRUD API
@@ -193,7 +264,7 @@ async def update_diary_entry(entry_id: str, entry_update: DiaryEntryUpdate, db: 
     if entry_update.tags is not None:
         entry.tags = entry_update.tags
     
-    entry.updated_at = datetime.now(timezone.utc)
+    entry.updated_at = datetime.now(JST)
     
     db.commit()
     db.refresh(entry)

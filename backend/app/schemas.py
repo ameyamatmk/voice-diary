@@ -9,6 +9,7 @@ class TranscribeRequest(BaseModel):
 
 class SummarizeRequest(BaseModel):
     text: str
+    entry_id: Optional[str] = None  # 日記エントリIDを追加
 
 class DiaryEntryCreate(BaseModel):
     title: Optional[str] = None

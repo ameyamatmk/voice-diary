@@ -88,13 +88,13 @@ export const api = {
   },
 
   // 要約
-  async startSummarization(text: string): Promise<any> {
+  async startSummarization(text: string, entryId?: string): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/api/summarize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, entry_id: entryId }),
     })
     
     if (!response.ok) {

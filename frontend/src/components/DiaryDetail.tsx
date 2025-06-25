@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Edit2, Save, X, Tag, Calendar, Clock, FileText, MessageSquare } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
@@ -13,14 +13,39 @@ interface DiaryDetailProps {
 
 export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [tagInput, setTagInput] = useState('')
+  const [currentEntry, setCurrentEntry] = useState<DiaryEntry>(entry)
   const [editedEntry, setEditedEntry] = useState<Partial<DiaryEntry>>({
     title: entry.title,
     transcription: entry.transcription,
     summary: entry.summary,
     tags: entry.tags || [],
   })
-  const [saving, setSaving] = useState(false)
-  const [tagInput, setTagInput] = useState('')
+
+  // 処理中の場合は定期的に更新
+  useEffect(() => {
+    const isProcessing = currentEntry.transcription_status === 'processing' || currentEntry.summary_status === 'processing'
+    
+    if (isProcessing) {
+      const interval = setInterval(async () => {
+        try {
+          const updatedEntry = await api.getDiaryEntry(currentEntry.id)
+          setCurrentEntry(updatedEntry)
+          onUpdate(updatedEntry)
+        } catch (error) {
+          console.error('エントリ更新エラー:', error)
+        }
+      }, 3000) // 3秒ごとに更新
+      
+      return () => clearInterval(interval)
+    }
+  }, [currentEntry.transcription_status, currentEntry.summary_status, currentEntry.id, onUpdate])
+
+  // propsのentryが変更されたら現在のentryを更新
+  useEffect(() => {
+    setCurrentEntry(entry)
+  }, [entry])
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -63,7 +88,7 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
   const handleSave = async () => {
     try {
       setSaving(true)
-      const updatedEntry = await api.updateDiaryEntry(entry.id, editedEntry)
+      const updatedEntry = await api.updateDiaryEntry(currentEntry.id, editedEntry)
       onUpdate(updatedEntry)
       setIsEditing(false)
     } catch (error) {
@@ -76,10 +101,10 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
 
   const handleCancel = () => {
     setEditedEntry({
-      title: entry.title,
-      transcription: entry.transcription,
-      summary: entry.summary,
-      tags: entry.tags || [],
+      title: currentEntry.title,
+      transcription: currentEntry.transcription,
+      summary: currentEntry.summary,
+      tags: currentEntry.tags || [],
     })
     setIsEditing(false)
   }
@@ -157,14 +182,14 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
             />
           ) : (
             <h1 className="text-2xl font-semibold text-text-primary">
-              {entry.title || '無題の日記'}
+              {currentEntry.title || '無題の日記'}
             </h1>
           )}
           
           <div className="flex items-center gap-4 mt-4 text-sm text-text-muted">
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              {formatDateTime(entry.recorded_at)}
+              {formatDateTime(currentEntry.recorded_at)}
             </div>
           </div>
         </div>
@@ -176,15 +201,15 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
             <div className="flex items-center gap-3">
               <FileText className="w-5 h-5 text-text-muted" />
               <span className="text-text-secondary">文字起こし:</span>
-              <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(entry.transcription_status)}`}>
-                {getStatusText(entry.transcription_status)}
+              <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(currentEntry.transcription_status)}`}>
+                {getStatusText(currentEntry.transcription_status)}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <MessageSquare className="w-5 h-5 text-text-muted" />
               <span className="text-text-secondary">要約:</span>
-              <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(entry.summary_status)}`}>
-                {getStatusText(entry.summary_status)}
+              <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(currentEntry.summary_status)}`}>
+                {getStatusText(currentEntry.summary_status)}
               </span>
             </div>
           </div>
@@ -202,13 +227,13 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
             />
           ) : (
             <div className="bg-bg-tertiary rounded-lg p-4">
-              {entry.transcription ? (
+              {currentEntry.transcription ? (
                 <p className="text-text-primary whitespace-pre-wrap leading-relaxed">
-                  {entry.transcription}
+                  {currentEntry.transcription}
                 </p>
               ) : (
                 <p className="text-text-muted italic">
-                  {entry.transcription_status === 'processing' ? '文字起こし処理中...' : '文字起こし結果がありません'}
+                  {currentEntry.transcription_status === 'processing' ? '文字起こし処理中...' : '文字起こし結果がありません'}
                 </p>
               )}
             </div>
@@ -227,13 +252,13 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
             />
           ) : (
             <div className="bg-bg-tertiary rounded-lg p-4">
-              {entry.summary ? (
+              {currentEntry.summary ? (
                 <p className="text-text-primary leading-relaxed">
-                  {entry.summary}
+                  {currentEntry.summary}
                 </p>
               ) : (
                 <p className="text-text-muted italic">
-                  {entry.summary_status === 'processing' ? '要約処理中...' : '要約がありません'}
+                  {currentEntry.summary_status === 'processing' ? '要約処理中...' : '要約がありません'}
                 </p>
               )}
             </div>
@@ -284,8 +309,8 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {entry.tags && entry.tags.length > 0 ? (
-                entry.tags.map((tag, index) => (
+              {currentEntry.tags && currentEntry.tags.length > 0 ? (
+                currentEntry.tags.map((tag, index) => (
                   <span
                     key={index}
                     className="px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm"

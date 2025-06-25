@@ -38,7 +38,7 @@ export default function HomePage() {
           
           // 要約処理開始
           if (transcription.transcription) {
-            const summaryResult = await api.startSummarization(transcription.transcription)
+            const summaryResult = await api.startSummarization(transcription.transcription, uploadResult.entry_id)
             console.log('要約開始:', summaryResult)
             
             // さらに2秒後に要約結果を取得

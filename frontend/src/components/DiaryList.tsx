@@ -19,6 +19,23 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
     loadDiaryEntries(currentPage)
   }, [currentPage])
 
+  // 処理中のエントリがある場合は定期的に更新
+  useEffect(() => {
+    if (!diaryData) return
+    
+    const hasProcessingEntries = diaryData.entries.some(
+      entry => entry.transcription_status === 'processing' || entry.summary_status === 'processing'
+    )
+    
+    if (hasProcessingEntries) {
+      const interval = setInterval(() => {
+        loadDiaryEntries(currentPage)
+      }, 3000) // 3秒ごとに更新
+      
+      return () => clearInterval(interval)
+    }
+  }, [diaryData, currentPage])
+
   const loadDiaryEntries = async (page: number) => {
     try {
       setLoading(true)
