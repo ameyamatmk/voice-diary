@@ -7,7 +7,7 @@
 ## 技術要件
 
 ### システム構成
-- **フロントエンド**: React.js + Next.js App Router + TypeScript
+- **フロントエンド**: Next.js 14 App Router + TypeScript (React.jsから変更)
 - **バックエンド**: FastAPI (Python)
 - **データベース**: PostgreSQL
 - **音声処理**: OpenAI Whisper (ローカル) または Whisper API
@@ -26,16 +26,18 @@
 
 ### 必須機能
 1. **音声録音**
-   - ブラウザWebRTC API使用
-   - MP3形式での録音・保存（WAVは文字起こし用一時ファイルのみ）
-   - 録音品質：44.1kHz、128kbps
-   - リアルタイム音声レベル表示
+   - ブラウザWebRTC API使用（MediaRecorder API）
+   - WebM形式での録音・保存
+   - 録音品質：ブラウザデフォルト設定
+   - リアルタイム音声レベル表示（開発中・動作調整要）
    - 録音時間制限（最大10分）
    - 録音の一時停止・再開機能
 
 2. **文字起こし・要約**
    - 音声ファイルのテキスト変換（日本語特化API使用）
    - 非同期処理（バックグラウンドで実行、進捗表示）
+   - **タイトル自動生成**: 要約結果の最初の20文字から自動生成
+   - **リアルタイム更新**: 処理中エントリの3秒間隔自動UI更新
    - 精度指標表示
    - 手動テキスト編集機能
    - 要約の再生成機能
@@ -44,7 +46,8 @@
    - 日記エントリの一覧表示（ページネーション対応）
    - 日記エントリの編集・削除機能
    - タグ付け機能（自由入力 + オートコンプリート）
-   - WebAuthn認証（パスキー対応）
+   - **データ永続化**: 音声アップロード時に自動エントリ作成、処理結果をデータベースに保存
+   - WebAuthn認証（パスキー対応・Phase 2実装予定）
 
 ### UI/UX・デザイン要件
 - **レスポンシブデザイン**: PC・タブレット・スマートフォン対応
@@ -319,41 +322,52 @@ POST /api/auth/logout        # ログアウト
 
 ### 処理フロー・エラーハンドリング
 ```python
-# 音声→テキスト→要約の非同期処理フロー
-1. 音声アップロード → task_id返却
-2. 文字起こし開始 → 進捗API で状況確認
+# 音声→テキスト→要約の非同期処理フロー（実装済み）
+1. 音声アップロード → DiaryEntry自動作成 + task_id返却
+2. 文字起こし開始 → 進捗API で状況確認（3秒間隔自動更新）
 3. 完了後、要約処理開始 → 進捗API で状況確認
-4. 全完了後、日記エントリに結果保存
+4. 要約完了時 → タイトル自動生成 + DiaryEntryに全結果保存
+5. UI自動更新 → 処理完了で監視停止
+
+# 開発環境用モック処理
+- 文字起こし: 2秒後に固定モックテキスト返却
+- 要約: 4秒後にモック要約 + タイトル生成
+- フロントエンド: 3秒間隔でAPI監視・UI更新
 
 # エラーハンドリング方針
 - API制限エラー：リトライ機構 + ユーザー通知
-- ファイルサイズ超過：アップロード前チェック
+- ファイルサイズ超過：アップロード前チェック（50MB制限）
 - 音声フォーマット不正：自動変換試行
 - ネットワークエラー：オフライン対応 + 同期機能
 ```
 
 ### データベーススキーマ
 ```sql
--- 日記エントリテーブル
+-- 日記エントリテーブル（実装済み）
 diary_entries:
   - id (UUID, PRIMARY KEY)
-  - title (VARCHAR)
-  - recorded_at (TIMESTAMP)
+  - title (VARCHAR)  -- 要約から自動生成または手動入力
+  - recorded_at (TIMESTAMP WITH TIME ZONE)  -- JST保存
   - audio_file_path (VARCHAR)
+  - file_id (VARCHAR)  -- アップロード時のファイルID
   - transcription (TEXT)
   - summary (TEXT)
   - tags (JSONB)
   - emotions (JSONB)
   - transcribe_model (VARCHAR)  -- 使用した文字起こしモデル
   - summary_model (VARCHAR)     -- 使用した要約モデル
-  - created_at (TIMESTAMP)
-  - updated_at (TIMESTAMP)
+  - transcription_status (VARCHAR)  -- pending, processing, completed, failed
+  - summary_status (VARCHAR)        -- pending, processing, completed, failed
+  - transcription_task_id (VARCHAR) -- 非同期処理追跡用
+  - summary_task_id (VARCHAR)       -- 非同期処理追跡用
+  - created_at (TIMESTAMP WITH TIME ZONE)  -- JST保存
+  - updated_at (TIMESTAMP WITH TIME ZONE)  -- JST保存
 
 -- 設定テーブル
 user_settings:
   - key (VARCHAR, PRIMARY KEY)
   - value (JSONB)
-  - updated_at (TIMESTAMP)
+  - updated_at (TIMESTAMP WITH TIME ZONE)  -- JST保存
   
 -- 設定例
 -- transcribe_api: "openai" | "google" | "amazon" | "local"
@@ -361,14 +375,14 @@ user_settings:
 -- summary_api: "openai" | "claude" | "local"
 -- summary_model: "gpt-4o-mini" | "claude-3-haiku" | "llama2:7b"
 
--- WebAuthn認証テーブル
+-- WebAuthn認証テーブル（Phase 2実装予定）
 webauthn_credentials:
   - id (UUID, PRIMARY KEY)
   - user_id (VARCHAR)
   - credential_id (BYTEA)
   - public_key (BYTEA)
   - sign_count (INTEGER)
-  - created_at (TIMESTAMP)
+  - created_at (TIMESTAMP WITH TIME ZONE)  -- JST保存
 ```
 
 ## Docker構成
@@ -558,9 +572,31 @@ verification = verify_authentication_response(
 
 ### 開発環境要件
 - **ホットリロード**: フロントエンド・バックエンド双方対応
-- **開発用認証**: パスワード認証でのバイパス機能
-- **モックAPI**: 文字起こし・要約のダミー応答
+- **開発用認証**: パスワード認証でのバイパス機能（Phase 1では認証なし）
+- **モックAPI**: 文字起こし・要約のダミー応答（実装済み）
 - **ローカルDB**: PostgreSQL Docker コンテナ
+- **Docker開発環境**: WSL2環境でのDocker Compose開発環境構築済み
+
+### 開発環境構成（実装済み）
+```yaml
+# compose.dev.yaml - 開発専用Docker Compose設定
+services:
+  voice-diary-web-dev:    # Next.js開発サーバー（ポート3000）
+  voice-diary-api-dev:    # FastAPI開発サーバー（ポート8000）
+  voice-diary-db-dev:     # PostgreSQL開発DB（ポート5432）
+
+# 開発環境固有設定
+volumes:
+  - ホットリロード対応（./frontend:/app, ./backend:/app）
+  - node_modules分離でパフォーマンス最適化
+  - ./volumes/uploads: 音声ファイル保存
+  - ./volumes/postgres: DB永続化
+
+environment:
+  - TRANSCRIBE_API=mock (開発環境はモック)
+  - SUMMARY_API=mock
+  - DATABASE_URL=postgresql://voicediaryuser:voicediarypass@voice-diary-db-dev:5432/voicediary
+```
 
 ### 環境変数設定
 ```bash
@@ -663,17 +699,84 @@ URL: https://diary.homelab.local/api/health
 
 **注**: ホームラボ全体のバックアップ戦略で対応するため、アプリ個別のバックアップ機能は実装しない
 
+## 開発環境での技術実装詳細
+
+### 実装済み技術スタック
+```typescript
+// フロントエンド実装詳細
+- Next.js 14.2.18 (App Router)
+- TypeScript 5.6.3
+- Tailwind CSS 3.4.1 (カスタムCSS変数対応)
+- Lucide React (アイコン)
+- MediaRecorder API (音声録音)
+
+// バックエンド実装詳細  
+- FastAPI 0.115.6
+- SQLAlchemy 2.0.36 (ORM)
+- PostgreSQL 15-alpine
+- Pydantic v2 (スキーマ)
+- CORS対応
+
+// Docker環境
+- Docker Compose v2形式
+- 開発用ホットリロード対応
+- ボリューム分離でパフォーマンス最適化
+```
+
+### 実装された主要機能
+```python
+# 非同期処理フロー
+1. WebRTC録音 → WebMファイル
+2. FormData経由でアップロード
+3. DiaryEntry自動作成（UUID, JST timestamp）
+4. Task ID生成 → 非同期処理開始
+5. Frontend 3秒間隔監視
+6. モック処理（2秒後文字起こし、4秒後要約）
+7. 結果をDiaryEntryに保存
+8. タイトル自動生成（要約の先頭20文字）
+9. UI自動更新・監視停止
+
+# APIエンドポイント（実装済み）
+POST /api/audio/upload       → file_id + entry_id返却
+POST /api/transcribe         → task_id返却  
+GET  /api/transcribe/{task_id} → 結果 + DB保存
+POST /api/summarize          → task_id返却
+GET  /api/summarize/{task_id}  → 結果 + DB保存 + タイトル生成
+GET  /api/diary/             → ページネーション対応一覧
+GET  /api/diary/{id}         → 個別取得
+PUT  /api/diary/{id}         → 編集・更新
+DELETE /api/diary/{id}       → 削除（音声ファイルも削除）
+```
+
+### 開発中に解決した課題
+```bash
+# 技術的課題と解決
+1. 音声レベル表示: RMS計算実装→動作調整要
+2. タイムゾーン問題: TIMESTAMP without time zone → with time zone + JST対応
+3. データ永続化: モック結果をDiaryEntryテーブルに保存
+4. リアルタイム更新: 3秒間隔自動監視・UI更新
+5. 状態初期化エラー: useState依存関係修正
+6. PostCSS設定: ES6→CommonJS形式変更
+```
+
 ## 実装優先度
 
-### Phase 1（最優先）
-- 基本的な音声録音・再生
-- シンプルな文字起こし（Whisper API）
+### Phase 1（最優先）✅ **実装完了**
+- 基本的な音声録音・再生（WebM形式）
+- シンプルな文字起こし（モック実装）
 - 基本的なCRUD機能
+- **追加実装機能**:
+  - タイトル自動生成
+  - リアルタイムUI更新
+  - データ永続化
+  - タイムゾーン対応（JST）
 
 ### Phase 2
-- 要約機能実装
-- UI/UX改善
+- 要約機能実装（モック完了 → 実際のAPI統合）
+- 文字起こし機能実装（モック完了 → 実際のAPI統合）
+- UI/UX改善（音声レベル表示修正等）
 - タグ管理機能強化
+- WebAuthn認証実装
 
 ### Phase 3（優先度低）
 - 検索機能
