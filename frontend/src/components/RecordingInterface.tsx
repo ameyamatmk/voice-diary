@@ -101,11 +101,21 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
   const updateAudioLevel = useCallback(() => {
     if (!analyserRef.current) return
     
-    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount)
-    analyserRef.current.getByteFrequencyData(dataArray)
+    const bufferLength = analyserRef.current.frequencyBinCount
+    const dataArray = new Uint8Array(bufferLength)
+    analyserRef.current.getByteTimeDomainData(dataArray)
     
-    const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length
-    setAudioLevel(average / 255) // 0-1の範囲に正規化
+    // RMS (Root Mean Square) 計算でより正確な音声レベルを取得
+    let sum = 0
+    for (let i = 0; i < bufferLength; i++) {
+      const sample = (dataArray[i] - 128) / 128 // -1から1の範囲に正規化
+      sum += sample * sample
+    }
+    const rms = Math.sqrt(sum / bufferLength)
+    
+    // 音声レベルを0-1の範囲に調整（感度を上げる）
+    const level = Math.min(rms * 5, 1)
+    setAudioLevel(level)
     
     if (recordingState === 'recording') {
       animationRef.current = requestAnimationFrame(updateAudioLevel)
@@ -195,13 +205,16 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
 
   const renderAudioLevelBars = () => {
     const bars = Array.from({ length: 20 }, (_, i) => {
-      const intensity = Math.max(0, audioLevel - (i * 0.05))
-      const height = intensity > 0 ? Math.min(100, intensity * 100) : 8
+      const barThreshold = i / 20 // 0から1の範囲
+      const isActive = audioLevel > barThreshold
+      const height = isActive ? Math.max(20, audioLevel * 80) : 10 // 最小20%, 最大80%
       
       return (
         <div
           key={i}
-          className="w-2 bg-success rounded-full transition-all duration-75"
+          className={`w-2 rounded-full transition-all duration-100 ${
+            isActive ? 'bg-success' : 'bg-border'
+          }`}
           style={{ height: `${height}%` }}
         />
       )
@@ -210,7 +223,9 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
     return (
       <div className="flex items-end justify-center gap-1 h-24 w-full bg-bg-tertiary rounded-lg mb-6 p-4">
         {recordingState === 'recording' ? bars : (
-          <div className="text-text-muted text-sm">音声レベル表示</div>
+          <div className="text-text-muted text-sm flex items-center justify-center h-full">
+            音声レベル表示
+          </div>
         )}
       </div>
     )
@@ -243,6 +258,7 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
             disabled={recordingState === 'processing'}
             className={`
               w-16 h-16 rounded-full text-white font-semibold
+              flex items-center justify-center
               touch-target focus-visible transition-all duration-200
               ${getRecordingButtonStyle()}
             `}
@@ -253,9 +269,9 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
           {recordingState === 'recording' && (
             <button
               onClick={pauseRecording}
-              className="w-12 h-12 rounded-full bg-bg-tertiary text-text-primary hover:bg-border touch-target focus-visible transition-all duration-200"
+              className="w-12 h-12 rounded-full bg-bg-tertiary text-text-primary hover:bg-border touch-target focus-visible transition-all duration-200 flex items-center justify-center"
             >
-              <Pause className="w-5 h-5 mx-auto" />
+              <Pause className="w-5 h-5" />
             </button>
           )}
         </div>
