@@ -1,5 +1,7 @@
+'use client'
+
 import React, { useState, useRef, useCallback } from 'react'
-import { Mic, Square, Play, Pause, Volume2 } from 'lucide-react'
+import { Mic, Square, Play, Pause } from 'lucide-react'
 
 type RecordingState = 'idle' | 'recording' | 'paused' | 'processing'
 

@@ -7,7 +7,7 @@
 ## 技術要件
 
 ### システム構成
-- **フロントエンド**: React.js + TypeScript
+- **フロントエンド**: React.js + Next.js App Router + TypeScript
 - **バックエンド**: FastAPI (Python)
 - **データベース**: PostgreSQL
 - **音声処理**: OpenAI Whisper (ローカル) または Whisper API
