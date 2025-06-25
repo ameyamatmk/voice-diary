@@ -1,0 +1,57 @@
+services:
+  voice-diary-web-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - voice-diary-api-dev
+    networks:
+      - voice-diary-dev
+
+  voice-diary-api-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./volumes/uploads:/app/uploads
+    environment:
+      - DATABASE_URL=postgresql://voicediaryuser:voicediarypass@voice-diary-db-dev:5432/voicediary
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - ENVIRONMENT=development
+      - TRANSCRIBE_API=mock
+      - SUMMARY_API=mock
+    depends_on:
+      - voice-diary-db-dev
+    networks:
+      - voice-diary-dev
+
+  voice-diary-db-dev:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=voicediary
+      - POSTGRES_USER=voicediaryuser
+      - POSTGRES_PASSWORD=voicediarypass
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data
+    networks:
+      - voice-diary-dev
+
+networks:
+  voice-diary-dev:
+    driver: bridge
+
+volumes:
+  node_modules:
