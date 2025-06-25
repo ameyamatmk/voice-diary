@@ -3,9 +3,52 @@
 import { RecordingInterface } from '@/components/RecordingInterface'
 
 export default function HomePage() {
-  const handleRecordingComplete = (audioBlob: Blob) => {
+  const handleRecordingComplete = async (audioBlob: Blob) => {
     console.log('録音完了:', audioBlob)
-    // TODO: サーバーに音声ファイルをアップロード
+    
+    try {
+      // FormDataを作成してBlobを添付
+      const formData = new FormData()
+      formData.append('file', audioBlob, 'recording.webm')
+      
+      // サーバーに音声ファイルをアップロード
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/audio/upload`, {
+        method: 'POST',
+        body: formData,
+      })
+      
+      if (!response.ok) {
+        throw new Error(`アップロードエラー: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      console.log('アップロード成功:', result)
+      
+      // 文字起こし処理を開始
+      const transcribeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transcribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ file_id: result.file_id }),
+      })
+      
+      if (transcribeResponse.ok) {
+        const transcribeResult = await transcribeResponse.json()
+        console.log('文字起こし開始:', transcribeResult)
+        
+        // TODO: 進捗確認とUI更新
+        setTimeout(async () => {
+          const finalResult = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/transcribe/${transcribeResult.task_id}`)
+          const transcription = await finalResult.json()
+          console.log('文字起こし完了:', transcription)
+        }, 2000) // 2秒後に結果取得（モック用）
+      }
+      
+    } catch (error) {
+      console.error('処理エラー:', error)
+      alert('音声ファイルの処理中にエラーが発生しました')
+    }
   }
 
   return (
