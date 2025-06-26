@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Edit2, Save, X, Tag, Calendar, Clock, FileText, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Edit2, Save, X, Tag, Calendar, Clock, FileText, MessageSquare, Mic } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
 
@@ -9,9 +9,10 @@ interface DiaryDetailProps {
   entry: DiaryEntry
   onBack: () => void
   onUpdate: (updatedEntry: DiaryEntry) => void
+  onNewRecording?: () => void
 }
 
-export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdate }) => {
+export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdate, onNewRecording }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [tagInput, setTagInput] = useState('')
@@ -139,6 +140,15 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
         </button>
         
         <div className="flex gap-2">
+          {!isEditing && onNewRecording && (
+            <button
+              onClick={onNewRecording}
+              className="flex items-center gap-2 px-4 py-2 bg-recording text-white rounded-lg hover:bg-recording/90 transition-colors"
+            >
+              <Mic className="w-4 h-4" />
+              新しい録音
+            </button>
+          )}
           {isEditing ? (
             <>
               <button

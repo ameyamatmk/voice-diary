@@ -1,18 +1,13 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { RecordingInterface } from '@/components/RecordingInterface'
-import { DiaryList } from '@/components/DiaryList'
-import { DiaryDetail } from '@/components/DiaryDetail'
-import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
 
-type ViewMode = 'recording' | 'list' | 'detail'
-
 export default function HomePage() {
-  const [viewMode, setViewMode] = useState<ViewMode>('recording')
-  const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const router = useRouter()
 
   const handleRecordingComplete = useCallback(async (audioBlob: Blob) => {
     console.log('録音完了:', audioBlob)
@@ -27,8 +22,8 @@ export default function HomePage() {
       const transcribeResult = await api.startTranscription(uploadResult.file_id)
       console.log('文字起こし開始:', transcribeResult)
       
-      // 日記一覧画面に移動
-      setViewMode('list')
+      // 作成された日記の詳細画面に移動
+      router.push(`/diary/${uploadResult.entry_id}`)
       
       // モック用: 2秒後に文字起こし結果を取得
       setTimeout(async () => {
@@ -62,52 +57,7 @@ export default function HomePage() {
     } finally {
       setIsProcessing(false)
     }
-  }, [])
-
-  const handleEntrySelect = useCallback((entry: DiaryEntry) => {
-    setSelectedEntry(entry)
-    setViewMode('detail')
-  }, [])
-
-  const handleBackToList = useCallback(() => {
-    setSelectedEntry(null)
-    setViewMode('list')
-  }, [])
-
-  const handleBackToRecording = useCallback(() => {
-    setSelectedEntry(null)
-    setViewMode('recording')
-  }, [])
-
-  const handleEntryUpdate = useCallback((updatedEntry: DiaryEntry) => {
-    setSelectedEntry(updatedEntry)
-  }, [])
-
-  if (viewMode === 'detail' && selectedEntry) {
-    return (
-      <DiaryDetail
-        entry={selectedEntry}
-        onBack={handleBackToList}
-        onUpdate={handleEntryUpdate}
-      />
-    )
-  }
-
-  if (viewMode === 'list') {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={handleBackToRecording}
-            className="px-4 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-secondary transition-colors"
-          >
-            新しい録音
-          </button>
-        </div>
-        <DiaryList onEntrySelect={handleEntrySelect} />
-      </div>
-    )
-  }
+  }, [router])
 
   return (
     <div className="space-y-8">
@@ -131,7 +81,7 @@ export default function HomePage() {
         </p>
         
         <button
-          onClick={() => setViewMode('list')}
+          onClick={() => router.push('/diary')}
           className="px-6 py-2 bg-bg-secondary text-text-primary border border-border rounded-lg hover:bg-bg-tertiary transition-colors"
         >
           過去の日記を見る
@@ -140,7 +90,7 @@ export default function HomePage() {
         {isProcessing && (
           <div className="bg-accent-primary/10 border border-accent-primary/20 rounded-lg p-4">
             <p className="text-accent-primary">
-              音声を処理中です。日記一覧で進捗を確認できます。
+              音声を処理中です。日記詳細ページで進捗を確認できます。
             </p>
           </div>
         )}
