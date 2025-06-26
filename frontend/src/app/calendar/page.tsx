@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, BookOpen, Clock, Tag, ChevronRight as ChevronRightIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, BookOpen } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
+import { DiaryCard } from '@/components/DiaryCard'
 
 export default function CalendarPage() {
   const router = useRouter()
@@ -61,48 +62,6 @@ export default function CalendarPage() {
     })
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ja-JP', {
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short'
-    })
-  }
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'text-success'
-      case 'processing':
-        return 'text-warning'
-      case 'failed':
-        return 'text-error'
-      default:
-        return 'text-text-muted'
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return '完了'
-      case 'processing':
-        return '処理中'
-      case 'failed':
-        return 'エラー'
-      default:
-        return '待機中'
-    }
-  }
 
   // カレンダーのグリッドを生成
   const generateCalendarGrid = () => {
@@ -360,79 +319,11 @@ export default function CalendarPage() {
         ) : (
           <div className="space-y-3">
             {sortedDiaryEntries.map((entry) => (
-              <div
+              <DiaryCard
                 key={entry.id}
-                className="bg-bg-primary rounded-lg p-3 border border-border hover:border-accent-primary/30 hover-lift cursor-pointer transition-all"
-                onClick={() => router.push(`/diary/${entry.id}`)}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex-1">
-                    <h4 className="text-base font-medium text-text-primary mb-1 break-words">
-                      {entry.title || '無題の日記'}
-                    </h4>
-                    <div className="flex items-center gap-3 text-sm text-text-muted">
-                      <div className="flex items-center gap-1">
-                        <CalendarIcon className="w-3 h-3" />
-                        {formatDate(entry.recorded_at)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatTime(entry.recorded_at)}
-                      </div>
-                    </div>
-                  </div>
-                  <ChevronRightIcon className="w-4 h-4 text-text-muted" />
-                </div>
-
-                {/* 処理状況 */}
-                <div className="flex items-center gap-3 mb-2 text-xs">
-                  <div className="flex items-center gap-1">
-                    <span className="text-text-secondary">文字起こし:</span>
-                    <span className={getStatusColor(entry.transcription_status)}>
-                      {getStatusText(entry.transcription_status)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-text-secondary">要約:</span>
-                    <span className={getStatusColor(entry.summary_status)}>
-                      {getStatusText(entry.summary_status)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 内容プレビュー */}
-                {entry.transcription && (
-                  <div className="mb-2">
-                    <p className="text-text-secondary text-sm line-clamp-2">
-                      {entry.transcription}
-                    </p>
-                  </div>
-                )}
-
-                {/* タグ */}
-                {entry.tags && entry.tags.length > 0 && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Tag className="w-3 h-3 text-text-muted" />
-                    {entry.tags.slice(0, 4).map((tag, index) => (
-                      <button
-                        key={index}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          router.push(`/tags/${encodeURIComponent(tag)}`)
-                        }}
-                        className="px-2 py-1 bg-accent-primary/10 text-accent-primary rounded text-xs hover:bg-accent-primary hover:text-white transition-colors"
-                      >
-                        {tag}
-                      </button>
-                    ))}
-                    {entry.tags.length > 4 && (
-                      <span className="text-xs text-text-muted">
-                        +{entry.tags.length - 4}個
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
+                entry={entry}
+                variant="compact"
+              />
             ))}
           </div>
         )}

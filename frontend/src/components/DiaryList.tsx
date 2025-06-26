@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Calendar, Clock, FileText, Tag, ChevronRight } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { DiaryEntry, DiaryEntryListResponse } from '@/types'
 import { api } from '@/lib/api'
+import { DiaryCard } from './DiaryCard'
 
 interface DiaryListProps {
   onEntrySelect?: (entry: DiaryEntry) => void
@@ -51,49 +52,6 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short'
-    })
-  }
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'text-success'
-      case 'processing':
-        return 'text-warning'
-      case 'failed':
-        return 'text-error'
-      default:
-        return 'text-text-muted'
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return '完了'
-      case 'processing':
-        return '処理中'
-      case 'failed':
-        return 'エラー'
-      default:
-        return '待機中'
-    }
-  }
 
   if (loading && !diaryData) {
     return (
@@ -152,80 +110,11 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
 
       <div className="space-y-3">
         {diaryData.entries.map((entry) => (
-          <div
+          <DiaryCard
             key={entry.id}
-            className="bg-bg-secondary rounded-lg p-4 shadow-md border border-border hover:shadow-lg hover-lift cursor-pointer transition-all"
-            onClick={() => onEntrySelect?.(entry)}
-          >
-            {/* ヘッダー部分 */}
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-text-primary mb-1 break-words">
-                  {entry.title || '無題の日記'}
-                </h3>
-                <div className="flex items-center gap-3 text-sm text-text-muted">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {formatDate(entry.recorded_at)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {formatTime(entry.recorded_at)}
-                  </div>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-text-muted" />
-            </div>
-
-            {/* 処理状況 */}
-            <div className="flex items-center gap-4 mb-3 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-text-secondary">文字起こし:</span>
-                <span className={getStatusColor(entry.transcription_status)}>
-                  {getStatusText(entry.transcription_status)}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-text-secondary">要約:</span>
-                <span className={getStatusColor(entry.summary_status)}>
-                  {getStatusText(entry.summary_status)}
-                </span>
-              </div>
-            </div>
-
-            {/* 内容プレビュー */}
-            {entry.transcription && (
-              <div className="mb-3">
-                <p className="text-text-secondary text-sm line-clamp-2">
-                  {entry.transcription}
-                </p>
-              </div>
-            )}
-
-            {/* タグ */}
-            {entry.tags && entry.tags.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <Tag className="w-4 h-4 text-text-muted" />
-                {entry.tags.slice(0, 3).map((tag, index) => (
-                  <button
-                    key={index}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      router.push(`/tags/${encodeURIComponent(tag)}`)
-                    }}
-                    className="px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm hover:bg-accent-primary hover:text-white transition-colors"
-                  >
-                    {tag}
-                  </button>
-                ))}
-                {entry.tags.length > 3 && (
-                  <span className="text-sm text-text-muted">
-                    +{entry.tags.length - 3}個
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+            entry={entry}
+            onClick={onEntrySelect}
+          />
         ))}
       </div>
 

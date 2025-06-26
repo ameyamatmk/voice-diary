@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { ArrowLeft, Tag, FileText, Calendar } from 'lucide-react'
+import { ArrowLeft, Tag, FileText } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
+import { DiaryCard } from '@/components/DiaryCard'
 
 interface TaggedDiaryListResponse {
   entries: DiaryEntry[]
@@ -50,23 +51,6 @@ export default function TagDetailPage() {
     router.push('/tags')
   }, [router])
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short'
-    })
-  }
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
 
   if (loading && !diaryData) {
     return (
@@ -171,58 +155,13 @@ export default function TagDetailPage() {
       {/* 日記一覧 */}
       <div className="space-y-4">
         {diaryData.entries.map((entry) => (
-          <div
+          <DiaryCard
             key={entry.id}
-            className="bg-bg-secondary rounded-xl p-6 shadow-md border border-border hover:shadow-lg hover-lift cursor-pointer transition-all"
-            onClick={() => handleEntrySelect(entry)}
-          >
-            {/* ヘッダー部分 */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-text-primary mb-2 break-words">
-                  {entry.title || '無題の日記'}
-                </h3>
-                <div className="flex items-center gap-4 text-sm text-text-muted">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {formatDate(entry.recorded_at)}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Tag className="w-4 h-4" />
-                    {formatTime(entry.recorded_at)}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 内容プレビュー */}
-            {entry.transcription && (
-              <div className="mb-4">
-                <p className="text-text-secondary text-sm line-clamp-2">
-                  {entry.transcription}
-                </p>
-              </div>
-            )}
-
-            {/* タグ */}
-            {entry.tags && entry.tags.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <Tag className="w-4 h-4 text-text-muted" />
-                {entry.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className={`px-3 py-1 rounded-full text-sm ${
-                      tag === tagName 
-                        ? 'bg-accent-primary text-white' 
-                        : 'bg-accent-primary/10 text-accent-primary'
-                    }`}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+            entry={entry}
+            variant="detailed"
+            onClick={handleEntrySelect}
+            showProcessingStatus={false}
+          />
         ))}
       </div>
 
