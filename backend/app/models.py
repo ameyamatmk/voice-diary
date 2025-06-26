@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, Integer
+from sqlalchemy import Column, String, Text, DateTime, Integer, Index
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP, JSONB
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -42,6 +42,16 @@ class DiaryEntry(Base):
     # タイムスタンプ
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(JST))
     updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(JST), onupdate=lambda: datetime.now(JST))
+
+    # インデックス定義
+    __table_args__ = (
+        # GINインデックス（タグ検索最適化）
+        Index('idx_diary_entries_tags_gin', 'tags', postgresql_using='gin'),
+        # BTreeインデックス（時系列検索最適化）
+        Index('idx_diary_entries_recorded_at_desc', 'recorded_at', postgresql_using='btree'),
+        # 複合インデックス（ステータス検索最適化）
+        Index('idx_diary_entries_status', 'transcription_status', 'summary_status'),
+    )
 
 class UserSettings(Base):
     __tablename__ = "user_settings"
