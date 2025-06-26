@@ -42,9 +42,6 @@ export default function DiaryDetailPage() {
     setEntry(updatedEntry)
   }, [])
 
-  const handleNewRecording = useCallback(() => {
-    router.push('/')
-  }, [router])
 
   if (loading) {
     return (
@@ -92,7 +89,6 @@ export default function DiaryDetailPage() {
       entry={entry}
       onBack={handleBack}
       onUpdate={handleUpdate}
-      onNewRecording={handleNewRecording}
     />
   )
 }

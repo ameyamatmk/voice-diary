@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Edit2, Save, X, Tag, Calendar, Clock, FileText, MessageSquare, Mic } from 'lucide-react'
+import { ArrowLeft, Edit2, Save, X, Tag, Calendar, Clock, FileText, MessageSquare, Trash2 } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
 import { TagSelector } from './TagSelector'
@@ -11,13 +11,14 @@ interface DiaryDetailProps {
   entry: DiaryEntry
   onBack: () => void
   onUpdate: (updatedEntry: DiaryEntry) => void
-  onNewRecording?: () => void
 }
 
-export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdate, onNewRecording }) => {
+export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdate }) => {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [currentEntry, setCurrentEntry] = useState<DiaryEntry>(entry)
   const [editedEntry, setEditedEntry] = useState<Partial<DiaryEntry>>({
     title: entry.title,
@@ -116,6 +117,20 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
     router.push(`/tags/${encodeURIComponent(tagName)}`)
   }
 
+  const handleDelete = async () => {
+    try {
+      setDeleting(true)
+      await api.deleteDiaryEntry(currentEntry.id)
+      setShowDeleteModal(false)
+      onBack() // 削除後は一覧に戻る
+    } catch (error) {
+      console.error('削除エラー:', error)
+      alert('削除に失敗しました')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -130,15 +145,6 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
         </button>
         
         <div className="flex gap-2">
-          {!isEditing && onNewRecording && (
-            <button
-              onClick={onNewRecording}
-              className="flex items-center gap-2 px-4 py-2 bg-recording text-white rounded-lg hover:bg-recording/90 transition-colors"
-            >
-              <Mic className="w-4 h-4" />
-              新しい録音
-            </button>
-          )}
           {isEditing ? (
             <>
               <button
@@ -158,13 +164,22 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-secondary transition-colors"
-            >
-              <Edit2 className="w-4 h-4" />
-              編集
-            </button>
+            <>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                削除
+              </button>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-secondary transition-colors"
+              >
+                <Edit2 className="w-4 h-4" />
+                編集
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -181,7 +196,7 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
               className="w-full text-2xl font-semibold bg-transparent border-none outline-none text-text-primary placeholder-text-muted"
             />
           ) : (
-            <h1 className="text-2xl font-semibold text-text-primary">
+            <h1 className="text-2xl font-semibold text-text-primary break-words">
               {currentEntry.title || '無題の日記'}
             </h1>
           )}
@@ -296,6 +311,37 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
           )}
         </div>
       </div>
+
+      {/* 削除確認モーダル */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-primary rounded-xl p-6 max-w-md w-full border border-border">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">
+              日記を削除しますか？
+            </h3>
+            <p className="text-text-secondary mb-6">
+              「{currentEntry.title || '無題の日記'}」を削除します。この操作は取り消せません。
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="px-4 py-2 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex items-center gap-2 px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 disabled:opacity-50 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                {deleting ? '削除中...' : '削除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

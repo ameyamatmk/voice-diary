@@ -160,7 +160,7 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
             {/* ヘッダー部分 */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h3 className="text-xl font-semibold text-text-primary mb-2">
+                <h3 className="text-xl font-semibold text-text-primary mb-2 break-words">
                   {entry.title || '無題の日記'}
                 </h3>
                 <div className="flex items-center gap-4 text-sm text-text-muted">
