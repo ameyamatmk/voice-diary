@@ -27,13 +27,13 @@ export default function RootLayout({
               </div>
             </div>
           </header>
-          
+
           <main className="container mx-auto px-3 py-4 max-w-5xl">
             {children}
           </main>
-          
+
           <footer className="mt-auto py-3 text-center text-text-muted">
-            <p>&copy; 2024 Voice Diary</p>
+            <p>&copy; 2025 Voice Diary</p>
           </footer>
         </div>
       </body>
