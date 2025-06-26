@@ -86,32 +86,30 @@ cd voice-diary
 
 ### 環境変数設定
 
-`.env` ファイルを作成：
+`.env.example` から `.env` ファイルを作成：
 
 ```bash
-# データベース設定
-DATABASE_URL=postgresql://voicediaryuser:voicediarypass@voice-diary-db-dev:5432/voicediary
+# .env.example をコピー
+cp .env.example .env
 
-# セキュリティ
+# エディタで .env を編集
+nano .env
+# または
+vim .env
+```
+
+`.env` ファイルで必要な設定を行います：
+
+```bash
+# 最低限必要な設定
 SECRET_KEY=your-super-secret-key-change-in-production
 
-# 環境設定
-ENVIRONMENT=development
-
-# AI API設定（使用するAPIを選択）
+# AI API設定（使用したいAPIのコメントアウトを解除）
 TRANSCRIBE_API=openai    # openai, google, claude, local, mock
 SUMMARY_API=openai       # openai, claude, local, mock
 
-# OpenAI API設定
+# OpenAI APIキー（使用する場合）
 OPENAI_API_KEY=sk-your-openai-api-key-here
-TRANSCRIBE_MODEL=whisper-1
-SUMMARY_MODEL=gpt-4o-mini
-
-# Google Cloud設定（オプション）
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
-
-# Claude API設定（オプション）
-CLAUDE_API_KEY=your-claude-api-key
 ```
 
 ## 🤖 AI API設定
@@ -124,12 +122,13 @@ CLAUDE_API_KEY=your-claude-api-key
 # 1. OpenAI APIキー取得
 # https://platform.openai.com/api-keys
 
-# 2. 環境変数設定
-export OPENAI_API_KEY="sk-your-api-key-here"
+# 2. .env ファイル設定
+cp .env.example .env
 
-# 3. compose.dev.yaml設定
+# 3. .env ファイルを編集して以下を設定:
 TRANSCRIBE_API=openai
 SUMMARY_API=openai
+OPENAI_API_KEY=sk-your-api-key-here
 TRANSCRIBE_MODEL=whisper-1
 SUMMARY_MODEL=gpt-4o-mini
 ```
@@ -148,9 +147,9 @@ SUMMARY_MODEL=gpt-4o-mini
 # 2. Speech-to-Text API有効化
 # 3. サービスアカウントキー作成
 
-# 4. 環境変数設定
-export GOOGLE_APPLICATION_CREDENTIALS="/path/to/credentials.json"
+# 4. .env ファイル設定
 TRANSCRIBE_API=google
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
 ```
 
 ### 3. Claude API
@@ -159,22 +158,33 @@ TRANSCRIBE_API=google
 
 ```bash
 # 1. Anthropic APIキー取得
-# 2. 環境変数設定
-export CLAUDE_API_KEY="your-claude-key"
+# 2. .env ファイル設定
 SUMMARY_API=claude
-SUMMARY_MODEL=claude-3-haiku
+CLAUDE_API_KEY=your-claude-key
+CLAUDE_MODEL=claude-3-haiku
 ```
 
 ### 4. モック設定（開発・テスト用）
 
 ```bash
+# .env ファイル設定（デフォルト）
 TRANSCRIBE_API=mock
 SUMMARY_API=mock
 ```
 
 ## 🏃 開発環境での実行
 
-### 1. 開発環境起動
+### 1. 環境変数ファイル作成
+
+```bash
+# .env.example から .env を作成
+cp .env.example .env
+
+# .env ファイルを編集（必要に応じてAPIキーを設定）
+nano .env
+```
+
+### 2. 開発環境起動
 
 ```bash
 # Docker Compose起動
@@ -184,20 +194,20 @@ docker compose -f compose.dev.yaml up -d
 docker compose -f compose.dev.yaml logs -f
 ```
 
-### 2. データベース初期化
+### 3. データベース初期化
 
 ```bash
 # マイグレーション実行
 docker compose -f compose.dev.yaml exec voice-diary-api-dev alembic upgrade head
 ```
 
-### 3. アクセス確認
+### 4. アクセス確認
 
 - **フロントエンド**: http://localhost:3000
 - **API**: http://localhost:8000
 - **API ドキュメント**: http://localhost:8000/docs
 
-### 4. 開発環境停止
+### 5. 開発環境停止
 
 ```bash
 docker compose -f compose.dev.yaml down
