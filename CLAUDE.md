@@ -45,7 +45,13 @@
 3. **データ管理**
    - 日記エントリの一覧表示（ページネーション対応）
    - 日記エントリの編集・削除機能
-   - タグ付け機能（自由入力 + オートコンプリート）
+   - **タグ管理システム（実装完了）**:
+     - 自由入力 + オートコンプリート機能
+     - 過去タグ選択（よく使われるタグ表示）
+     - 全タグ表示・検索・フィルタ機能
+     - タグ専用ページ（/tags）・タグ別記事一覧（/tags/[name]）
+     - PostgreSQL JSONB型による高速タグ検索
+     - 日本語タグ対応（URLエンコーディング）
    - **データ永続化**: 音声アップロード時に自動エントリ作成、処理結果をデータベースに保存
    - WebAuthn認証（パスキー対応・Phase 2実装予定）
 
@@ -284,12 +290,18 @@ interface DiaryCardProps {
 
 ### フロントエンド仕様
 ```typescript
-// 主要コンポーネント構成
+// 主要コンポーネント構成（実装済み）
 - RecordingInterface: 音声録音UI
-- DiaryList: 日記一覧表示
-- DiaryDetail: 個別日記詳細・編集
-- Settings: 設定画面（API選択等）
-- Dashboard: 統計・サマリー表示
+- DiaryList: 日記一覧表示（タグクリック→タグ別表示対応）
+- DiaryDetail: 個別日記詳細・編集（TagSelector統合）
+- TagSelector: 包括的タグ選択コンポーネント
+  - 選択済みタグ表示・削除
+  - 新規タグ入力・オートコンプリート
+  - よく使われるタグ（上位5個）
+  - 全タグ表示（折りたたみ式・検索・フィルタ対応）
+- Navigation: ヘッダーナビゲーション（録音・日記一覧・タグ）
+- Settings: 設定画面（API選択等・未実装）
+- Dashboard: 統計・サマリー表示（未実装）
 ```
 
 ### バックエンドAPI仕様
@@ -309,7 +321,8 @@ GET  /api/settings           # 設定取得
 PUT  /api/settings           # 設定更新
 GET  /api/models/transcribe  # 利用可能な文字起こしモデル一覧
 GET  /api/models/summarize   # 利用可能な要約モデル一覧
-GET  /api/tags               # タグ一覧取得（オートコンプリート用）
+GET  /api/tags               # タグ一覧取得（統計情報付き・実装済み）
+GET  /api/diary/by-tag/{tag_name} # タグ別記事一覧（ページネーション対応・実装済み）
 GET  /api/health             # ヘルスチェック（Uptime Kuma統合用）
 
 # 認証関連
@@ -704,10 +717,10 @@ URL: https://diary.homelab.local/api/health
 ### 実装済み技術スタック
 ```typescript
 // フロントエンド実装詳細
-- Next.js 14.2.18 (App Router)
+- Next.js 14.2.18 (App Router・ファイルベースルーティング)
 - TypeScript 5.6.3
 - Tailwind CSS 3.4.1 (カスタムCSS変数対応)
-- Lucide React (アイコン)
+- Lucide React (アイコン: Mic, BookOpen, Hash, Tag, ChevronDown等)
 - MediaRecorder API (音声録音)
 
 // バックエンド実装詳細  
@@ -744,8 +757,10 @@ POST /api/summarize          → task_id返却
 GET  /api/summarize/{task_id}  → 結果 + DB保存 + タイトル生成
 GET  /api/diary/             → ページネーション対応一覧
 GET  /api/diary/{id}         → 個別取得
-PUT  /api/diary/{id}         → 編集・更新
+PUT  /api/diary/{id}         → 編集・更新（タグ管理対応）
 DELETE /api/diary/{id}       → 削除（音声ファイルも削除）
+GET  /api/tags               → タグ統計情報取得
+GET  /api/diary/by-tag/{tag_name} → タグ別記事一覧（JSONB検索）
 ```
 
 ### 開発中に解決した課題
@@ -757,6 +772,9 @@ DELETE /api/diary/{id}       → 削除（音声ファイルも削除）
 4. リアルタイム更新: 3秒間隔自動監視・UI更新
 5. 状態初期化エラー: useState依存関係修正
 6. PostCSS設定: ES6→CommonJS形式変更
+7. ファイルベースルーティング: SPAからNext.js App Routerに移行
+8. タグ検索・日本語対応: JSON→JSONB型変更 + URLエンコーディング
+9. タグ管理UX: 包括的TagSelectorコンポーネント実装
 ```
 
 ## 実装優先度
@@ -770,12 +788,18 @@ DELETE /api/diary/{id}       → 削除（音声ファイルも削除）
   - リアルタイムUI更新
   - データ永続化
   - タイムゾーン対応（JST）
+  - ファイルベースルーティング（Next.js App Router）
+  - 包括的タグ管理システム
 
 ### Phase 2
 - 要約機能実装（モック完了 → 実際のAPI統合）
 - 文字起こし機能実装（モック完了 → 実際のAPI統合）
 - UI/UX改善（音声レベル表示修正等）
-- タグ管理機能強化
+- **タグ管理機能強化（実装完了）**:
+  - ✅ TagSelectorコンポーネント完全実装
+  - ✅ タグ専用ページ（/tags, /tags/[name]）
+  - ✅ JSONB型データベース検索最適化
+  - ✅ 日本語タグ完全対応
 - WebAuthn認証実装
 
 ### Phase 3（優先度低）
