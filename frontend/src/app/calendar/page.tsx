@@ -200,11 +200,11 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text-primary flex items-center gap-2">
-          <CalendarIcon className="w-6 h-6" />
+        <h1 className="text-xl font-semibold text-text-primary flex items-center gap-2">
+          <CalendarIcon className="w-5 h-5" />
           カレンダー
         </h1>
         
@@ -219,7 +219,7 @@ export default function CalendarPage() {
       </div>
 
       {/* 月切り替え */}
-      <div className="flex items-center justify-center gap-4 bg-bg-secondary rounded-xl p-4">
+      <div className="flex items-center justify-center gap-3 bg-bg-secondary rounded-lg p-3">
         <button
           onClick={goToPreviousMonth}
           className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
@@ -227,7 +227,7 @@ export default function CalendarPage() {
           <ChevronLeft className="w-5 h-5" />
         </button>
         
-        <h2 className="text-xl font-semibold text-text-primary min-w-[160px] text-center">
+        <h2 className="text-lg font-semibold text-text-primary min-w-[140px] text-center">
           {formatMonthYear(currentDate)}
         </h2>
         
@@ -240,9 +240,9 @@ export default function CalendarPage() {
       </div>
 
       {/* カレンダーグリッド */}
-      <div className="bg-bg-secondary rounded-xl p-4 border border-border">
+      <div className="bg-bg-secondary rounded-lg p-3 border border-border">
         {/* 曜日ヘッダー */}
-        <div className="grid grid-cols-7 mb-4">
+        <div className="grid grid-cols-7 mb-3">
           {weekDays.map((day, index) => (
             <div
               key={index}
@@ -259,7 +259,7 @@ export default function CalendarPage() {
             <div
               key={index}
               onClick={() => handleDateClick(cell.date)}
-              className={`min-h-[80px] p-2 rounded-lg transition-colors cursor-pointer hover:bg-bg-tertiary ${
+              className={`min-h-[70px] p-2 rounded-lg transition-colors cursor-pointer hover:bg-bg-tertiary ${
                 cell.isCurrentMonth
                   ? 'bg-bg-primary border border-border hover:border-accent-primary/30'
                   : 'bg-bg-tertiary text-text-muted'
@@ -306,8 +306,8 @@ export default function CalendarPage() {
       </div>
 
       {/* 統計情報 */}
-      <div className="bg-bg-secondary rounded-xl p-6 border border-border">
-        <h3 className="text-lg font-semibold text-text-primary mb-4">
+      <div className="bg-bg-secondary rounded-lg p-4 border border-border">
+        <h3 className="text-base font-semibold text-text-primary mb-3">
           {formatMonthYear(currentDate)}の統計
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -330,9 +330,9 @@ export default function CalendarPage() {
       </div>
 
       {/* 月間記事一覧 */}
-      <div className="bg-bg-secondary rounded-xl p-6 border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-text-primary">
+      <div className="bg-bg-secondary rounded-lg p-4 border border-border">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-text-primary">
             {formatMonthYear(currentDate)}の記事一覧
           </h3>
           
@@ -362,15 +362,15 @@ export default function CalendarPage() {
             {sortedDiaryEntries.map((entry) => (
               <div
                 key={entry.id}
-                className="bg-bg-primary rounded-lg p-4 border border-border hover:border-accent-primary/30 hover-lift cursor-pointer transition-all"
+                className="bg-bg-primary rounded-lg p-3 border border-border hover:border-accent-primary/30 hover-lift cursor-pointer transition-all"
                 onClick={() => router.push(`/diary/${entry.id}`)}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <h4 className="text-lg font-medium text-text-primary mb-1 break-words">
+                    <h4 className="text-base font-medium text-text-primary mb-1 break-words">
                       {entry.title || '無題の日記'}
                     </h4>
-                    <div className="flex items-center gap-4 text-sm text-text-muted">
+                    <div className="flex items-center gap-3 text-sm text-text-muted">
                       <div className="flex items-center gap-1">
                         <CalendarIcon className="w-3 h-3" />
                         {formatDate(entry.recorded_at)}
@@ -385,7 +385,7 @@ export default function CalendarPage() {
                 </div>
 
                 {/* 処理状況 */}
-                <div className="flex items-center gap-4 mb-3 text-xs">
+                <div className="flex items-center gap-3 mb-2 text-xs">
                   <div className="flex items-center gap-1">
                     <span className="text-text-secondary">文字起こし:</span>
                     <span className={getStatusColor(entry.transcription_status)}>
@@ -402,7 +402,7 @@ export default function CalendarPage() {
 
                 {/* 内容プレビュー */}
                 {entry.transcription && (
-                  <div className="mb-3">
+                  <div className="mb-2">
                     <p className="text-text-secondary text-sm line-clamp-2">
                       {entry.transcription}
                     </p>

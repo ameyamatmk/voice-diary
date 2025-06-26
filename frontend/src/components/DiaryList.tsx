@@ -140,9 +140,9 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-text-primary">
+        <h2 className="text-xl font-semibold text-text-primary">
           日記一覧
         </h2>
         <div className="text-sm text-text-muted">
@@ -150,20 +150,20 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {diaryData.entries.map((entry) => (
           <div
             key={entry.id}
-            className="bg-bg-secondary rounded-xl p-6 shadow-md border border-border hover:shadow-lg hover-lift cursor-pointer transition-all"
+            className="bg-bg-secondary rounded-lg p-4 shadow-md border border-border hover:shadow-lg hover-lift cursor-pointer transition-all"
             onClick={() => onEntrySelect?.(entry)}
           >
             {/* ヘッダー部分 */}
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start justify-between mb-3">
               <div className="flex-1">
-                <h3 className="text-xl font-semibold text-text-primary mb-2 break-words">
+                <h3 className="text-lg font-semibold text-text-primary mb-1 break-words">
                   {entry.title || '無題の日記'}
                 </h3>
-                <div className="flex items-center gap-4 text-sm text-text-muted">
+                <div className="flex items-center gap-3 text-sm text-text-muted">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
                     {formatDate(entry.recorded_at)}
@@ -178,7 +178,7 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
             </div>
 
             {/* 処理状況 */}
-            <div className="flex items-center gap-6 mb-4 text-sm">
+            <div className="flex items-center gap-4 mb-3 text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-text-secondary">文字起こし:</span>
                 <span className={getStatusColor(entry.transcription_status)}>
@@ -195,7 +195,7 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
 
             {/* 内容プレビュー */}
             {entry.transcription && (
-              <div className="mb-4">
+              <div className="mb-3">
                 <p className="text-text-secondary text-sm line-clamp-2">
                   {entry.transcription}
                 </p>

@@ -15,10 +15,10 @@ export const Navigation: React.FC = () => {
   }
 
   return (
-    <nav className="flex items-center gap-4">
+    <nav className="flex items-center gap-2">
       <Link
         href="/"
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+        className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-colors ${
           isActive('/') 
             ? 'bg-accent-primary text-white' 
             : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
@@ -30,7 +30,7 @@ export const Navigation: React.FC = () => {
       
       <Link
         href="/diary"
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+        className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-colors ${
           isActive('/diary') 
             ? 'bg-accent-primary text-white' 
             : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
@@ -42,7 +42,7 @@ export const Navigation: React.FC = () => {
       
       <Link
         href="/tags"
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+        className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-colors ${
           isActive('/tags') 
             ? 'bg-accent-primary text-white' 
             : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
@@ -54,7 +54,7 @@ export const Navigation: React.FC = () => {
       
       <Link
         href="/calendar"
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+        className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-colors ${
           isActive('/calendar') 
             ? 'bg-accent-primary text-white' 
             : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'

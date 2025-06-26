@@ -107,12 +107,12 @@ export default function TagsPage() {
   const maxCount = Math.max(...tags.map(tag => tag.count))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-text-primary flex items-center gap-2">
-            <Hash className="w-6 h-6" />
+          <h2 className="text-xl font-semibold text-text-primary flex items-center gap-2">
+            <Hash className="w-5 h-5" />
             タグ一覧
           </h2>
           <p className="text-text-muted mt-1">
@@ -122,8 +122,8 @@ export default function TagsPage() {
       </div>
 
       {/* 統計カード */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-bg-secondary rounded-xl p-4 border border-border">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-bg-secondary rounded-lg p-3 border border-border">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-accent-primary/10 rounded-lg flex items-center justify-center">
               <Tag className="w-5 h-5 text-accent-primary" />

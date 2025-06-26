@@ -133,9 +133,9 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
 
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <button
           onClick={onBack}
           className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
@@ -184,9 +184,9 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* タイトル */}
-        <div className="bg-bg-secondary rounded-xl p-6 border border-border">
+        <div className="bg-bg-secondary rounded-lg p-4 border border-border">
           {isEditing ? (
             <input
               type="text"
@@ -196,12 +196,12 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
               className="w-full text-2xl font-semibold bg-transparent border-none outline-none text-text-primary placeholder-text-muted"
             />
           ) : (
-            <h1 className="text-2xl font-semibold text-text-primary break-words">
+            <h1 className="text-xl font-semibold text-text-primary break-words">
               {currentEntry.title || '無題の日記'}
             </h1>
           )}
           
-          <div className="flex items-center gap-4 mt-4 text-sm text-text-muted">
+          <div className="flex items-center gap-3 mt-3 text-sm text-text-muted">
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
               {formatDateTime(currentEntry.recorded_at)}
@@ -210,9 +210,9 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
         </div>
 
         {/* 処理状況 */}
-        <div className="bg-bg-secondary rounded-xl p-6 border border-border">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">処理状況</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-bg-secondary rounded-lg p-4 border border-border">
+          <h2 className="text-base font-semibold text-text-primary mb-3">処理状況</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex items-center gap-3">
               <FileText className="w-5 h-5 text-text-muted" />
               <span className="text-text-secondary">文字起こし:</span>
@@ -231,8 +231,8 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
         </div>
 
         {/* 文字起こし */}
-        <div className="bg-bg-secondary rounded-xl p-6 border border-border">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">文字起こし</h2>
+        <div className="bg-bg-secondary rounded-lg p-4 border border-border">
+          <h2 className="text-base font-semibold text-text-primary mb-3">文字起こし</h2>
           {isEditing ? (
             <textarea
               value={editedEntry.transcription || ''}
@@ -256,8 +256,8 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
         </div>
 
         {/* 要約 */}
-        <div className="bg-bg-secondary rounded-xl p-6 border border-border">
-          <h2 className="text-lg font-semibold text-text-primary mb-4">要約</h2>
+        <div className="bg-bg-secondary rounded-lg p-4 border border-border">
+          <h2 className="text-base font-semibold text-text-primary mb-3">要約</h2>
           {isEditing ? (
             <textarea
               value={editedEntry.summary || ''}
@@ -281,10 +281,10 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
         </div>
 
         {/* タグ */}
-        <div className="bg-bg-secondary rounded-xl p-6 border border-border">
-          <div className="flex items-center gap-2 mb-4">
-            <Tag className="w-5 h-5 text-text-muted" />
-            <h2 className="text-lg font-semibold text-text-primary">タグ</h2>
+        <div className="bg-bg-secondary rounded-lg p-4 border border-border">
+          <div className="flex items-center gap-2 mb-3">
+            <Tag className="w-4 h-4 text-text-muted" />
+            <h2 className="text-base font-semibold text-text-primary">タグ</h2>
           </div>
           
           {isEditing ? (
