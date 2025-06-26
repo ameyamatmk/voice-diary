@@ -113,4 +113,21 @@ export const api = {
     
     return response.json()
   },
+
+  // タグ関連
+  async getTags(): Promise<{ tags: Array<{ name: string; count: number }> }> {
+    const response = await fetch(`${API_BASE_URL}/api/tags`)
+    if (!response.ok) {
+      throw new Error(`タグ一覧の取得に失敗しました: ${response.status}`)
+    }
+    return response.json()
+  },
+
+  async getDiaryEntriesByTag(tagName: string, page: number = 1, size: number = 10): Promise<DiaryEntryListResponse & { tag_name: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/diary/by-tag/${encodeURIComponent(tagName)}?page=${page}&size=${size}`)
+    if (!response.ok) {
+      throw new Error(`タグ検索に失敗しました: ${response.status}`)
+    }
+    return response.json()
+  },
 }

@@ -1,5 +1,5 @@
-from sqlalchemy import Column, String, Text, DateTime, Integer, JSON
-from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
+from sqlalchemy import Column, String, Text, DateTime, Integer
+from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP, JSONB
 import uuid
 from datetime import datetime, timezone, timedelta
 from .database import Base
@@ -24,8 +24,8 @@ class DiaryEntry(Base):
     summary = Column(Text, nullable=True)
     
     # タグと感情分析
-    tags = Column(JSON, nullable=True, default=list)
-    emotions = Column(JSON, nullable=True)
+    tags = Column(JSONB, nullable=True, default=list)
+    emotions = Column(JSONB, nullable=True)
     
     # 使用したモデル情報
     transcribe_model = Column(String(100), nullable=True)
@@ -47,5 +47,5 @@ class UserSettings(Base):
     __tablename__ = "user_settings"
     
     key = Column(String(100), primary_key=True)
-    value = Column(JSON, nullable=False)
+    value = Column(JSONB, nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(JST), onupdate=lambda: datetime.now(JST))

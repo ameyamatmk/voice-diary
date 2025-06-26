@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Edit2, Save, X, Tag, Calendar, Clock, FileText, MessageSquare, Mic } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
+import { TagSelector } from './TagSelector'
 
 interface DiaryDetailProps {
   entry: DiaryEntry
@@ -15,7 +16,6 @@ interface DiaryDetailProps {
 export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdate, onNewRecording }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [tagInput, setTagInput] = useState('')
   const [currentEntry, setCurrentEntry] = useState<DiaryEntry>(entry)
   const [editedEntry, setEditedEntry] = useState<Partial<DiaryEntry>>({
     title: entry.title,
@@ -110,22 +110,6 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
     setIsEditing(false)
   }
 
-  const addTag = () => {
-    if (tagInput.trim() && !editedEntry.tags?.includes(tagInput.trim())) {
-      setEditedEntry(prev => ({
-        ...prev,
-        tags: [...(prev.tags || []), tagInput.trim()]
-      }))
-      setTagInput('')
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setEditedEntry(prev => ({
-      ...prev,
-      tags: prev.tags?.filter(tag => tag !== tagToRemove) || []
-    }))
-  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -283,40 +267,10 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
           </div>
           
           {isEditing ? (
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                  placeholder="タグを入力してEnter..."
-                  className="flex-1 px-3 py-2 bg-bg-tertiary border border-border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary"
-                />
-                <button
-                  onClick={addTag}
-                  className="px-4 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-secondary transition-colors"
-                >
-                  追加
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {editedEntry.tags?.map((tag, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm"
-                  >
-                    {tag}
-                    <button
-                      onClick={() => removeTag(tag)}
-                      className="hover:text-error transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TagSelector
+              selectedTags={editedEntry.tags || []}
+              onTagsChange={(tags) => setEditedEntry(prev => ({ ...prev, tags }))}
+            />
           ) : (
             <div className="flex flex-wrap gap-2">
               {currentEntry.tags && currentEntry.tags.length > 0 ? (

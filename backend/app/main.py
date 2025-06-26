@@ -287,3 +287,57 @@ async def delete_diary_entry(entry_id: str, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "日記エントリが削除されました"}
+
+@app.get("/api/tags")
+async def get_tags(db: Session = Depends(get_db)):
+    # 全日記エントリからタグを収集
+    entries = db.query(DiaryEntry).filter(DiaryEntry.tags.isnot(None)).all()
+    
+    tag_counts = {}
+    for entry in entries:
+        if entry.tags:
+            for tag in entry.tags:
+                if tag.strip():  # 空文字除外
+                    tag_counts[tag] = tag_counts.get(tag, 0) + 1
+    
+    # 使用回数降順でソート
+    sorted_tags = sorted(tag_counts.items(), key=lambda x: x[1], reverse=True)
+    
+    return {
+        "tags": [{"name": tag, "count": count} for tag, count in sorted_tags]
+    }
+
+@app.get("/api/diary/by-tag/{tag_name}")
+async def get_diary_entries_by_tag(tag_name: str, page: int = 1, size: int = 10, db: Session = Depends(get_db)):
+    # 指定されたタグを含む日記エントリを取得
+    offset = (page - 1) * size
+    
+    # JSONB検索クエリを使用
+    from sqlalchemy import text
+    import json
+    
+    # JSONエンコードでエスケープを確実に行う
+    tag_array_json = json.dumps([tag_name])
+    
+    entries = db.query(DiaryEntry).filter(
+        text("tags @> :tag_array")
+    ).params(
+        tag_array=tag_array_json
+    ).order_by(DiaryEntry.recorded_at.desc()).offset(offset).limit(size).all()
+    
+    total = db.query(DiaryEntry).filter(
+        text("tags @> :tag_array")
+    ).params(
+        tag_array=tag_array_json
+    ).count()
+    
+    has_next = offset + size < total
+    
+    return {
+        "entries": entries,
+        "total": total,
+        "page": page,
+        "size": size,
+        "has_next": has_next,
+        "tag_name": tag_name
+    }

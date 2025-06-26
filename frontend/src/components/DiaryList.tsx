@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Calendar, Clock, FileText, Tag, ChevronRight } from 'lucide-react'
 import { DiaryEntry, DiaryEntryListResponse } from '@/types'
 import { api } from '@/lib/api'
@@ -14,6 +15,7 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const router = useRouter()
 
   useEffect(() => {
     loadDiaryEntries(currentPage)
@@ -205,12 +207,16 @@ export const DiaryList: React.FC<DiaryListProps> = ({ onEntrySelect }) => {
               <div className="flex items-center gap-2 flex-wrap">
                 <Tag className="w-4 h-4 text-text-muted" />
                 {entry.tags.slice(0, 3).map((tag, index) => (
-                  <span
+                  <button
                     key={index}
-                    className="px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/tags/${encodeURIComponent(tag)}`)
+                    }}
+                    className="px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm hover:bg-accent-primary hover:text-white transition-colors"
                   >
                     {tag}
-                  </span>
+                  </button>
                 ))}
                 {entry.tags.length > 3 && (
                   <span className="text-sm text-text-muted">
