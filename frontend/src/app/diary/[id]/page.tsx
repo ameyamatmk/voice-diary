@@ -21,8 +21,10 @@ export default function DiaryDetailPage() {
         setLoading(true)
         const data = await api.getDiaryEntry(entryId)
         setEntry(data)
+        document.title = `${data.title || '無題の日記'} - Voice Diary`
         setError(null)
       } catch (err) {
+        document.title = '日記詳細 - Voice Diary'
         setError(err instanceof Error ? err.message : '日記の読み込みに失敗しました')
       } finally {
         setLoading(false)

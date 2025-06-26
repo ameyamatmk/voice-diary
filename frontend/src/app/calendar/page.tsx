@@ -16,6 +16,7 @@ export default function CalendarPage() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
 
   useEffect(() => {
+    document.title = 'カレンダー - Voice Diary'
     loadMonthlyEntries()
   }, [currentDate])
 

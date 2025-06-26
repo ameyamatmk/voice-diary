@@ -17,6 +17,7 @@ export default function TagsPage() {
   const router = useRouter()
 
   useEffect(() => {
+    document.title = 'タグ一覧 - Voice Diary'
     loadTags()
   }, [])
 

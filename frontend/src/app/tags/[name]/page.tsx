@@ -27,6 +27,7 @@ export default function TagDetailPage() {
   const tagName = decodeURIComponent(params.name as string)
 
   useEffect(() => {
+    document.title = `${tagName} - タグ別記事 - Voice Diary`
     loadDiaryEntries(currentPage)
   }, [currentPage, tagName])
 

@@ -24,6 +24,7 @@ export default function DailyDiaryPage() {
       const date = new Date(year, month - 1, day) // month は 0-indexed
       if (!isNaN(date.getTime())) {
         setSelectedDate(date)
+        document.title = `${dateString} - 日別記事 - Voice Diary`
         loadDailyEntries(date)
       } else {
         setError('無効な日付形式です')

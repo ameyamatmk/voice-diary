@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { RecordingInterface } from '@/components/RecordingInterface'
 import { api } from '@/lib/api'
@@ -8,6 +8,10 @@ import { api } from '@/lib/api'
 export default function HomePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    document.title = '音声録音 - Voice Diary'
+  }, [])
 
   const handleRecordingComplete = useCallback(async (audioBlob: Blob) => {
     console.log('録音完了:', audioBlob)

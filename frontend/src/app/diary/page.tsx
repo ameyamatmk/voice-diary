@@ -1,12 +1,16 @@
 'use client'
 
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DiaryList } from '@/components/DiaryList'
 import { DiaryEntry } from '@/types'
 
 export default function DiaryListPage() {
   const router = useRouter()
+
+  useEffect(() => {
+    document.title = '日記一覧 - Voice Diary'
+  }, [])
 
   const handleEntrySelect = useCallback((entry: DiaryEntry) => {
     router.push(`/diary/${entry.id}`)

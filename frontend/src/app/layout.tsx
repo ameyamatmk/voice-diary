@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { Navigation } from '@/components/Navigation'
 import '../globals.css'
 
@@ -19,9 +20,9 @@ export default function RootLayout({
           <header className="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-md border-b border-border">
             <div className="container mx-auto px-3 py-2">
               <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold text-text-primary">
+                <Link href="/" className="text-xl font-bold text-text-primary hover:text-accent-primary transition-colors">
                   Voice Diary
-                </h1>
+                </Link>
                 <Navigation />
               </div>
             </div>
