@@ -149,17 +149,22 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
               <Tag className="w-4 h-4" />
               よく使われるタグ
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {availableTags
                 .filter(tag => !selectedTags.includes(tag.name))
-                .slice(0, 5)
+                .slice(0, 6)
                 .map((tag) => (
                   <button
                     key={tag.name}
                     onClick={() => addTag(tag.name)}
-                    className="px-3 py-1 bg-bg-tertiary text-text-secondary rounded-full text-sm hover:bg-accent-primary/10 hover:text-accent-primary transition-colors"
+                    className="text-left px-3 py-2 bg-bg-tertiary text-text-secondary rounded-lg text-sm hover:bg-accent-primary/10 hover:text-accent-primary transition-colors border border-transparent hover:border-accent-primary/30"
                   >
-                    {tag.name} ({tag.count})
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium truncate mr-2">{tag.name}</span>
+                      <span className="text-xs text-text-muted bg-bg-secondary px-1.5 py-0.5 rounded-full flex-shrink-0">
+                        {tag.count}
+                      </span>
+                    </div>
                   </button>
                 ))}
             </div>
@@ -193,29 +198,39 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
                   className="w-full px-3 py-2 text-sm bg-bg-secondary border border-border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary"
                 />
                 
-                <div className="max-h-48 overflow-y-auto border border-border rounded-lg bg-bg-tertiary">
-                  <div className="p-2 space-y-1">
-                    {filteredAllTags.map((tag) => (
-                      <button
-                        key={tag.name}
-                        onClick={() => addTag(tag.name)}
-                        className="w-full text-left px-3 py-2 rounded hover:bg-bg-secondary transition-colors flex items-center justify-between group"
-                      >
-                        <span className="text-text-primary">{tag.name}</span>
-                        <span className="text-xs text-text-muted group-hover:text-accent-primary">
-                          {tag.count}回
-                        </span>
-                      </button>
-                    ))}
-                    {filteredAllTags.length === 0 && tagFilter && (
-                      <p className="text-text-muted text-sm p-2 text-center">
-                        「{tagFilter}」に一致するタグがありません
-                      </p>
-                    )}
-                    {filteredAllTags.length === 0 && !tagFilter && (
-                      <p className="text-text-muted text-sm p-2 text-center">
-                        選択可能なタグがありません
-                      </p>
+                <div className="max-h-64 overflow-y-auto border border-border rounded-lg bg-bg-tertiary">
+                  <div className="p-4">
+                    {filteredAllTags.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {filteredAllTags.map((tag) => (
+                          <button
+                            key={tag.name}
+                            onClick={() => addTag(tag.name)}
+                            className="text-left px-3 py-2 rounded-lg hover:bg-bg-secondary transition-colors border border-border bg-bg-primary hover:border-accent-primary/50 group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-text-primary text-sm font-medium truncate mr-2">
+                                {tag.name}
+                              </span>
+                              <span className="text-xs text-text-muted group-hover:text-accent-primary bg-bg-tertiary px-2 py-0.5 rounded-full flex-shrink-0">
+                                {tag.count}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        {tagFilter ? (
+                          <p className="text-text-muted text-sm">
+                            「{tagFilter}」に一致するタグがありません
+                          </p>
+                        ) : (
+                          <p className="text-text-muted text-sm">
+                            選択可能なタグがありません
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

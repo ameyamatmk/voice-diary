@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, Edit2, Save, X, Tag, Calendar, Clock, FileText, MessageSquare, Mic } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
@@ -14,6 +15,7 @@ interface DiaryDetailProps {
 }
 
 export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdate, onNewRecording }) => {
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [currentEntry, setCurrentEntry] = useState<DiaryEntry>(entry)
@@ -108,6 +110,10 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
       tags: currentEntry.tags || [],
     })
     setIsEditing(false)
+  }
+
+  const handleTagClick = (tagName: string) => {
+    router.push(`/tags/${encodeURIComponent(tagName)}`)
   }
 
 
@@ -275,12 +281,13 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
             <div className="flex flex-wrap gap-2">
               {currentEntry.tags && currentEntry.tags.length > 0 ? (
                 currentEntry.tags.map((tag, index) => (
-                  <span
+                  <button
                     key={index}
-                    className="px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm"
+                    onClick={() => handleTagClick(tag)}
+                    className="px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm hover:bg-accent-primary hover:text-white transition-colors cursor-pointer"
                   >
                     {tag}
-                  </span>
+                  </button>
                 ))
               ) : (
                 <p className="text-text-muted italic">タグがありません</p>
