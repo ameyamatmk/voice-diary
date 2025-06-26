@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Mic, BookOpen, Home, Hash, Calendar } from 'lucide-react'
+import { Mic, BookOpen, Home, Hash, Calendar, Search } from 'lucide-react'
 
 export const Navigation: React.FC = () => {
   const pathname = usePathname()
@@ -62,6 +62,18 @@ export const Navigation: React.FC = () => {
       >
         <Calendar className="w-4 h-4" />
         <span className="hidden sm:inline">カレンダー</span>
+      </Link>
+      
+      <Link
+        href="/search"
+        className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-colors ${
+          isActive('/search') 
+            ? 'bg-accent-primary text-white' 
+            : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary'
+        }`}
+      >
+        <Search className="w-4 h-4" />
+        <span className="hidden sm:inline">検索</span>
       </Link>
     </nav>
   )

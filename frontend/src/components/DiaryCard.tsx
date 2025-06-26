@@ -11,6 +11,7 @@ interface DiaryCardProps {
   showProcessingStatus?: boolean
   maxTags?: number
   onClick?: (entry: DiaryEntry) => void
+  searchQuery?: string
 }
 
 export const DiaryCard: React.FC<DiaryCardProps> = ({
@@ -18,7 +19,8 @@ export const DiaryCard: React.FC<DiaryCardProps> = ({
   variant = 'default',
   showProcessingStatus = true,
   maxTags = 5,
-  onClick
+  onClick,
+  searchQuery
 }) => {
   const router = useRouter()
 
@@ -133,13 +135,34 @@ export const DiaryCard: React.FC<DiaryCardProps> = ({
     return variant === 'compact' ? 'w-3 h-3' : 'w-4 h-4'
   }
 
+  // 検索クエリをハイライトする関数
+  const highlightSearchQuery = (text: string, query?: string) => {
+    if (!query || !query.trim()) {
+      return text
+    }
+
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    const parts = text.split(regex)
+    
+    return parts.map((part, index) => {
+      if (regex.test(part)) {
+        return (
+          <mark key={index} className="bg-yellow-200 text-yellow-900 rounded px-1">
+            {part}
+          </mark>
+        )
+      }
+      return part
+    })
+  }
+
   return (
     <div className={getCardStyles()} onClick={handleClick}>
       {/* ヘッダー部分 */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <h3 className={getTitleStyles()}>
-            {entry.title || '無題の日記'}
+            {searchQuery ? highlightSearchQuery(entry.title || '無題の日記', searchQuery) : (entry.title || '無題の日記')}
           </h3>
           <div className="flex items-center gap-3 text-sm text-text-muted">
             <div className="flex items-center gap-1">
@@ -177,7 +200,7 @@ export const DiaryCard: React.FC<DiaryCardProps> = ({
       {entry.transcription && (
         <div className={variant === 'compact' ? 'mb-2' : 'mb-3'}>
           <p className="text-text-secondary text-sm line-clamp-2">
-            {entry.transcription}
+            {searchQuery ? highlightSearchQuery(entry.transcription, searchQuery) : entry.transcription}
           </p>
         </div>
       )}

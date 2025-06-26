@@ -130,4 +130,13 @@ export const api = {
     }
     return response.json()
   },
+
+  // 全文検索
+  async searchDiaryEntries(query: string, page: number = 1, size: number = 10): Promise<DiaryEntryListResponse & { query: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}&page=${page}&size=${size}`)
+    if (!response.ok) {
+      throw new Error(`検索に失敗しました: ${response.status}`)
+    }
+    return response.json()
+  },
 }

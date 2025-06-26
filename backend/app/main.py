@@ -234,6 +234,49 @@ async def get_diary_entries(page: int = 1, size: int = 10, db: Session = Depends
         has_next=has_next
     )
 
+@app.get("/api/search")
+async def search_diary_entries(q: str, page: int = 1, size: int = 10, db: Session = Depends(get_db)):
+    # 日記本文での全文検索
+    if not q or not q.strip():
+        raise HTTPException(status_code=400, detail="検索クエリが空です")
+    
+    search_query = q.strip()
+    offset = (page - 1) * size
+    
+    # タイトル、文字起こし、要約から検索（LIKE演算子を使用してシンプルに実装）
+    from sqlalchemy import or_, and_
+    
+    search_filter = or_(
+        DiaryEntry.title.ilike(f"%{search_query}%"),
+        DiaryEntry.transcription.ilike(f"%{search_query}%"),
+        DiaryEntry.summary.ilike(f"%{search_query}%")
+    )
+    
+    # 完了したエントリのみ検索対象にする
+    completion_filter = and_(
+        DiaryEntry.transcription_status == "completed",
+        DiaryEntry.summary_status == "completed"
+    )
+    
+    entries = db.query(DiaryEntry).filter(
+        and_(search_filter, completion_filter)
+    ).order_by(DiaryEntry.recorded_at.desc()).offset(offset).limit(size).all()
+    
+    total = db.query(DiaryEntry).filter(
+        and_(search_filter, completion_filter)
+    ).count()
+    
+    has_next = offset + size < total
+    
+    return {
+        "entries": entries,
+        "total": total,
+        "page": page,
+        "size": size,
+        "has_next": has_next,
+        "query": search_query
+    }
+
 @app.get("/api/diary/{entry_id}", response_model=DiaryEntryResponse)
 async def get_diary_entry(entry_id: str, db: Session = Depends(get_db)):
     # 個別の日記エントリを取得
