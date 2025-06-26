@@ -304,26 +304,41 @@ interface DiaryCardProps {
 - Dashboard: 統計・サマリー表示（未実装）
 ```
 
-### バックエンドAPI仕様
+### バックエンドAPI仕様（リファクタリング済み）
+
+#### **ルーター構成**
 ```python
-# 主要エンドポイント
-POST /api/diary/             # 新規日記作成
-GET  /api/diary/             # 日記一覧取得（ページネーション対応）
-GET  /api/diary/{id}         # 個別日記取得
-PUT  /api/diary/{id}         # 日記更新
-DELETE /api/diary/{id}       # 日記削除
-POST /api/audio/upload       # 音声ファイルアップロード
-POST /api/transcribe         # 文字起こし実行（非同期）
+# /app/routers/ - 機能別ルーター分割
+├── audio.py     # 音声関連（アップロード・文字起こし）
+├── summary.py   # 要約関連
+├── diary.py     # 日記CRUD・検索・タグ
+└── auth.py      # 認証関連（Phase 2実装予定）
+```
+
+#### **主要エンドポイント**
+```python
+# 音声処理 (/app/routers/audio.py)
+POST /api/audio/upload         # 音声ファイルアップロード + 自動エントリ作成
+POST /api/transcribe           # 文字起こし実行（非同期）
 GET  /api/transcribe/{task_id} # 文字起こし進捗・結果取得
-POST /api/summarize          # 要約生成（非同期）
+
+# 要約処理 (/app/routers/summary.py)  
+POST /api/summarize            # 要約生成（非同期）
 GET  /api/summarize/{task_id}  # 要約進捗・結果取得
-GET  /api/settings           # 設定取得
-PUT  /api/settings           # 設定更新
-GET  /api/models/transcribe  # 利用可能な文字起こしモデル一覧
-GET  /api/models/summarize   # 利用可能な要約モデル一覧
-GET  /api/tags               # タグ一覧取得（統計情報付き・実装済み）
-GET  /api/diary/by-tag/{tag_name} # タグ別記事一覧（ページネーション対応・実装済み）
-GET  /api/health             # ヘルスチェック（Uptime Kuma統合用）
+
+# 日記管理 (/app/routers/diary.py)
+POST   /api/diary/             # 新規日記作成
+GET    /api/diary/             # 日記一覧取得（ページネーション対応）
+GET    /api/diary/{id}         # 個別日記取得
+PUT    /api/diary/{id}         # 日記更新
+DELETE /api/diary/{id}         # 日記削除
+GET    /api/diary/by-tag/{tag_name} # タグ別記事一覧（JSONB検索）
+GET    /api/search             # 全文検索（タイトル・本文・要約）
+GET    /api/tags               # タグ一覧取得（統計情報付き）
+
+# システム (/app/main.py)
+GET /api/health                # ヘルスチェック（Uptime Kuma統合用）
+GET /                          # ルートエンドポイント
 
 # 認証関連
 POST /api/auth/register      # WebAuthn登録開始

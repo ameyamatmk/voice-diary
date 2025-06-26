@@ -29,8 +29,17 @@ services:
       - DATABASE_URL=postgresql://voicediaryuser:voicediarypass@voice-diary-db-dev:5432/voicediary
       - SECRET_KEY=dev-secret-key-change-in-production
       - ENVIRONMENT=development
+      # AI API設定 (openai, google, claude, local, mock)
       - TRANSCRIBE_API=mock
       - SUMMARY_API=mock
+      # OpenAI API設定
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - TRANSCRIBE_MODEL=whisper-1
+      - SUMMARY_MODEL=gpt-4o-mini
+      # Google Cloud Speech-to-Text設定
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-}
+      # Claude API設定
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
     depends_on:
       - voice-diary-db-dev
     networks:
