@@ -55,16 +55,18 @@
 
 ### 基本機能（実装済み）
 - ✅ 音声録音・再生（WebM形式）
-- ✅ 文字起こし（AI API統合）
-- ✅ 要約生成（AI API統合）
+- ✅ 文字起こし（モック実装・AI API統合準備完了）
+- ✅ 要約生成（モック実装・AI API統合準備完了）
 - ✅ 日記エントリCRUD
-- ✅ タグ管理（オートコンプリート・検索）
+- ✅ タグ管理（オートコンプリート・JSONB検索）
 - ✅ カレンダー表示（月間・日別）
 - ✅ 検索機能（全文検索）
 - ✅ レスポンシブデザイン
+- ✅ リアルタイム処理進捗表示
 
 ### 拡張機能（今後実装予定）
-- 🔄 WebAuthn認証（パスキー）
+- 🔄 実際のAI API統合（OpenAI/Google/Claude）
+- 🔐 WebAuthn認証（パスキー）
 - ⚙️ 設定画面UI
 - 📊 統計・分析機能
 - 📤 データエクスポート
@@ -79,11 +81,11 @@
 
 ### 🏗️ アーキテクチャ概要
 
-本システムは**開発・本番両対応**の統一Docker構成を採用：
+本システムは**統一Docker構成**を採用：
 
 - **開発環境**: ホットリロード + ボリュームマウント
-- **本番環境**: 最適化ビルド + ヘルスチェック + 自動再起動
-- **環境切り替え**: `--env-file` で簡単切り替え
+- **本番環境**: 同一構成で安定動作
+- **環境変数**: `.env`ファイルによる設定管理
 
 ### リポジトリクローン
 
@@ -196,7 +198,7 @@ nano .env
 
 ```bash
 # 開発環境で起動（ホットリロード有効）
-docker compose --env-file .env.development up -d
+docker compose up -d
 
 # ログ確認
 docker compose logs -f
@@ -204,10 +206,7 @@ docker compose logs -f
 
 ### 3. データベース初期化
 
-```bash
-# マイグレーション実行
-docker compose exec voice-diary-api alembic upgrade head
-```
+データベースは起動時に自動作成されます（SQLAlchemy auto-migration）。
 
 ### 4. アクセス確認
 
@@ -240,10 +239,9 @@ cp .env.example .env
 # - データベースパスワード変更（推奨）
 
 # 4. 本番環境で起動
-docker compose --env-file .env.production up -d
+docker compose up -d
 
-# 5. 初期化
-docker compose exec voice-diary-api alembic upgrade head
+# 5. データベース初期化は自動実行されます
 ```
 
 ### DNS・SSL設定

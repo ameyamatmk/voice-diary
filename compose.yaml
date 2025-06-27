@@ -25,7 +25,8 @@ services:
     volumes:
       - ./backend:/app
       - ./volumes/uploads:/app/uploads
-
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=postgresql://voicediaryuser:voicediarypass@voice-diary-db:5432/voicediary
     depends_on:
