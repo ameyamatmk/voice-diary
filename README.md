@@ -77,6 +77,14 @@
 - Node.js 18+ (開発時)
 - Python 3.11+ (開発時)
 
+### 🏗️ アーキテクチャ概要
+
+本システムは**開発・本番両対応**の統一Docker構成を採用：
+
+- **開発環境**: ホットリロード + ボリュームマウント
+- **本番環境**: 最適化ビルド + ヘルスチェック + 自動再起動
+- **環境切り替え**: `--env-file` で簡単切り替え
+
 ### リポジトリクローン
 
 ```bash
@@ -187,18 +195,18 @@ nano .env
 ### 2. 開発環境起動
 
 ```bash
-# Docker Compose起動
-docker compose -f compose.dev.yaml up -d
+# 開発環境で起動（ホットリロード有効）
+docker compose --env-file .env.development up -d
 
 # ログ確認
-docker compose -f compose.dev.yaml logs -f
+docker compose logs -f
 ```
 
 ### 3. データベース初期化
 
 ```bash
 # マイグレーション実行
-docker compose -f compose.dev.yaml exec voice-diary-api-dev alembic upgrade head
+docker compose exec voice-diary-api alembic upgrade head
 ```
 
 ### 4. アクセス確認
@@ -210,7 +218,7 @@ docker compose -f compose.dev.yaml exec voice-diary-api-dev alembic upgrade head
 ### 5. 開発環境停止
 
 ```bash
-docker compose -f compose.dev.yaml down
+docker compose down
 ```
 
 ## 🌐 本番環境デプロイ
@@ -222,17 +230,20 @@ docker compose -f compose.dev.yaml down
 sudo mkdir -p /opt/homelab/apps/voice-diary
 sudo cp -r . /opt/homelab/apps/voice-diary/
 
-# 2. 本番用compose.yaml作成
-cp compose.dev.yaml /opt/homelab/apps/voice-diary/compose.yaml
+# 2. 本番用環境変数設定
+cd /opt/homelab/apps/voice-diary
+cp .env.example .env
 
-# 3. 本番環境用設定変更
-# - ENVIRONMENT=production
-# - 実際のシークレットキー設定
+# 3. .env ファイル編集（本番用設定）
+# - SECRET_KEY=実際のシークレットキー
 # - AI APIキー設定
+# - データベースパスワード変更（推奨）
 
-# 4. 起動
-cd /opt/homelab/apps
-docker compose up -d voice-diary-web voice-diary-api voice-diary-db
+# 4. 本番環境で起動
+docker compose --env-file .env.production up -d
+
+# 5. 初期化
+docker compose exec voice-diary-api alembic upgrade head
 ```
 
 ### DNS・SSL設定
@@ -332,10 +343,10 @@ GET /api/health
 
 ```bash
 # API キーの確認
-docker compose -f compose.dev.yaml exec voice-diary-api-dev env | grep API_KEY
+docker compose exec voice-diary-api env | grep API_KEY
 
 # ログ確認
-docker compose -f compose.dev.yaml logs voice-diary-api-dev
+docker compose logs voice-diary-api
 
 # APIクォータ確認
 # OpenAI: https://platform.openai.com/usage
@@ -345,10 +356,10 @@ docker compose -f compose.dev.yaml logs voice-diary-api-dev
 
 ```bash
 # データベースコンテナ確認
-docker compose -f compose.dev.yaml ps voice-diary-db-dev
+docker compose ps voice-diary-db
 
 # データベース接続テスト
-docker compose -f compose.dev.yaml exec voice-diary-db-dev psql -U voicediaryuser -d voicediary
+docker compose exec voice-diary-db psql -U voicediaryuser -d voicediary
 ```
 
 #### 4. ファイルアップロード エラー
@@ -358,18 +369,18 @@ docker compose -f compose.dev.yaml exec voice-diary-db-dev psql -U voicediaryuse
 ls -la volumes/uploads/
 
 # 権限確認
-docker compose -f compose.dev.yaml exec voice-diary-api-dev ls -la /app/uploads
+docker compose exec voice-diary-api ls -la /app/uploads
 ```
 
 ### ログ確認
 
 ```bash
 # 全サービスログ
-docker compose -f compose.dev.yaml logs -f
+docker compose logs -f
 
 # 特定サービスログ
-docker compose -f compose.dev.yaml logs -f voice-diary-api-dev
-docker compose -f compose.dev.yaml logs -f voice-diary-web-dev
+docker compose logs -f voice-diary-api
+docker compose logs -f voice-diary-web
 ```
 
 ### パフォーマンス確認
@@ -409,7 +420,7 @@ logging:
 
 ```bash
 # データベースバックアップ
-docker compose -f compose.dev.yaml exec voice-diary-db-dev pg_dump -U voicediaryuser voicediary > backup_$(date +%Y%m%d).sql
+docker compose exec voice-diary-db pg_dump -U voicediaryuser voicediary > backup_$(date +%Y%m%d).sql
 
 # 音声ファイルバックアップ
 tar -czf uploads_backup_$(date +%Y%m%d).tar.gz volumes/uploads/

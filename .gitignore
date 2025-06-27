@@ -17,6 +17,9 @@ build/
 .env.test.local
 .env.production.local
 
+# Note: .env.development and .env.production are tracked
+# as they contain only configuration templates
+
 # IDE
 .vscode/
 .idea/
