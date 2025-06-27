@@ -139,4 +139,43 @@ export const api = {
     }
     return response.json()
   },
+
+  // 設定関連
+  async getSettings(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/settings`)
+    if (!response.ok) {
+      throw new Error(`設定の取得に失敗しました: ${response.status}`)
+    }
+    return response.json()
+  },
+
+  async saveSettings(settings: any): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/settings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(settings),
+    })
+    if (!response.ok) {
+      throw new Error(`設定の保存に失敗しました: ${response.status}`)
+    }
+    return response.json()
+  },
+
+  async validateSettings(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/settings/validate`)
+    if (!response.ok) {
+      throw new Error(`設定の検証に失敗しました: ${response.status}`)
+    }
+    return response.json()
+  },
+
+  async getAvailableModels(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/api/settings/models`)
+    if (!response.ok) {
+      throw new Error(`モデル一覧の取得に失敗しました: ${response.status}`)
+    }
+    return response.json()
+  },
 }

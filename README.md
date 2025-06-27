@@ -64,10 +64,13 @@
 - ✅ レスポンシブデザイン
 - ✅ リアルタイム処理進捗表示
 
+### AI機能（実装済み）
+- ✅ 実際のAI API統合（OpenAI/Google/Claude）
+- ✅ 設定画面UI（/settings）
+- ✅ 動的API切り替え機能
+
 ### 拡張機能（今後実装予定）
-- 🔄 実際のAI API統合（OpenAI/Google/Claude）
 - 🔐 WebAuthn認証（パスキー）
-- ⚙️ 設定画面UI
 - 📊 統計・分析機能
 - 📤 データエクスポート
 
@@ -122,65 +125,110 @@ SUMMARY_API=openai       # openai, claude, local, mock
 OPENAI_API_KEY=sk-your-openai-api-key-here
 ```
 
-## 🤖 AI API設定
+## 🔑 AI API設定
 
-### 1. OpenAI API（推奨）
+音声日記システムは複数のAIサービスに対応しています。**使用したいAPIキーを取得して設定してください**。
 
-最もコスト効率が良い選択肢：
+### 📋 必要なAPIキー一覧
 
+| APIサービス | APIキー | 用途 | 月間コスト（100分想定） |
+|------------|---------|------|----------------------|
+| **OpenAI** | `OPENAI_API_KEY` | 文字起こし + 要約 | **$0.615** |
+| **Claude** | `CLAUDE_API_KEY` | 要約のみ | $0.04 |
+| **Google Cloud** | `GOOGLE_APPLICATION_CREDENTIALS` | 文字起こしのみ | $2.4 |
+
+### 🎯 推奨設定パターン
+
+#### **Pattern 1: 最もコスパが良い（推奨）**
 ```bash
-# 1. OpenAI APIキー取得
-# https://platform.openai.com/api-keys
-
-# 2. .env ファイル設定
-cp .env.example .env
-
-# 3. .env ファイルを編集して以下を設定:
+# OpenAI APIのみ使用
+OPENAI_API_KEY=sk-proj-your-openai-key-here
 TRANSCRIBE_API=openai
 SUMMARY_API=openai
-OPENAI_API_KEY=sk-your-api-key-here
 TRANSCRIBE_MODEL=whisper-1
 SUMMARY_MODEL=gpt-4o-mini
 ```
+**月間コスト**: ~$0.615 | **特徴**: 高精度・多言語対応
 
-**コスト試算**（月間100分の音声想定）：
-- 文字起こし: $0.60/月
-- 要約: $0.015/月
-- **合計: $0.615/月**
-
-### 2. Google Cloud Speech-to-Text
-
-高精度な日本語文字起こし：
-
+#### **Pattern 2: 高品質重視**
 ```bash
-# 1. Google Cloud プロジェクト作成・認証設定
-# 2. Speech-to-Text API有効化
-# 3. サービスアカウントキー作成
-
-# 4. .env ファイル設定
-TRANSCRIBE_API=google
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
-```
-
-### 3. Claude API
-
-高品質な要約生成：
-
-```bash
-# 1. Anthropic APIキー取得
-# 2. .env ファイル設定
+# OpenAI + Claude組み合わせ
+OPENAI_API_KEY=sk-proj-your-openai-key-here
+CLAUDE_API_KEY=sk-ant-your-claude-key-here
+TRANSCRIBE_API=openai
 SUMMARY_API=claude
-CLAUDE_API_KEY=your-claude-key
-CLAUDE_MODEL=claude-3-haiku
+TRANSCRIBE_MODEL=whisper-1
+SUMMARY_MODEL=claude-3-sonnet
 ```
+**月間コスト**: ~$0.75 | **特徴**: 高品質要約・自然な文章
 
-### 4. モック設定（開発・テスト用）
-
+#### **Pattern 3: 日本語特化**
 ```bash
-# .env ファイル設定（デフォルト）
+# Google Cloud + OpenAI組み合わせ  
+GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google-cloud-key.json
+OPENAI_API_KEY=sk-proj-your-openai-key-here
+TRANSCRIBE_API=google
+SUMMARY_API=openai
+SUMMARY_MODEL=gpt-4o-mini
+```
+**月間コスト**: ~$2.415 | **特徴**: 日本語文字起こし最高精度
+
+#### **Pattern 4: 開発・テスト用**
+```bash
+# モック設定（無料）
 TRANSCRIBE_API=mock
 SUMMARY_API=mock
 ```
+**月間コスト**: 無料 | **特徴**: ダミーデータでシステムテスト
+
+### 🔧 APIキー取得手順
+
+#### **1. OpenAI API（推奨）**
+1. https://platform.openai.com/ にアクセス
+2. アカウント作成・ログイン
+3. 「API Keys」→「Create new secret key」
+4. `sk-proj-`で始まるキーをコピー
+5. .envファイルに設定：
+   ```bash
+   OPENAI_API_KEY=sk-proj-your-actual-key-here
+   ```
+
+#### **2. Claude API（高品質要約）**
+1. https://console.anthropic.com/ にアクセス
+2. アカウント作成・ログイン  
+3. 「API Keys」→「Create Key」
+4. `sk-ant-`で始まるキーをコピー
+5. .envファイルに設定：
+   ```bash
+   CLAUDE_API_KEY=sk-ant-your-actual-key-here
+   ```
+
+#### **3. Google Cloud Speech（日本語特化）**
+1. https://console.cloud.google.com/ にアクセス
+2. プロジェクト作成
+3. Speech-to-Text API を有効化
+4. 「IAM」→「サービスアカウント」→「キーを作成」
+5. JSONファイルをダウンロード
+6. ファイルを配置して.envに設定：
+   ```bash
+   GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google-cloud-key.json
+   ```
+
+### ⚙️ 設定画面での変更
+
+APIキー設定後、Webブラウザの設定画面で簡単に切り替え可能：
+
+1. http://localhost:3000/settings にアクセス
+2. 使用したいAPI・モデルを選択
+3. 「保存」をクリック
+4. 即座に反映（リアルタイム切り替え）
+
+### 💡 設定のコツ
+
+- **開発段階**: モック設定でシステム確認
+- **本格運用**: OpenAI APIキーのみでスタート
+- **高品質化**: 必要に応じてClaude追加
+- **コスト管理**: OpenAI使用量ダッシュボードで監視
 
 ## 🏃 開発環境での実行
 
@@ -301,7 +349,15 @@ GET /api/health
 
 ## 🧪 使用方法
 
-### 1. 音声録音
+### 1. AI API設定（初回のみ）
+
+1. `/settings` にアクセス
+2. 使用したいAPIプロバイダーを選択
+3. 適切なモデルを選択
+4. 「保存」ボタンをクリック
+5. 設定完了！
+
+### 2. 音声録音
 
 1. トップページ（/）にアクセス
 2. 🎤 録音ボタンをクリック
@@ -309,20 +365,22 @@ GET /api/health
 4. 録音開始（最大10分）
 5. ⏹️ 停止ボタンで録音終了
 
-### 2. 自動処理
+### 3. 自動AI処理
 
-録音完了後、自動的に：
-1. 文字起こし実行（進捗表示）
-2. 要約生成（進捗表示）
-3. タイトル自動生成
-4. 日記エントリ作成
+録音完了後、設定に応じて自動実行：
+1. **文字起こし**（OpenAI Whisper / Google Cloud）
+2. **要約生成**（OpenAI GPT / Claude）
+3. **タイトル自動生成**（要約から抽出）
+4. **日記エントリ作成**（全結果を保存）
 
-### 3. 日記管理
+### 4. 日記管理
 
+- **/**: 音声録音画面
 - **/diary**: 一覧表示・編集・削除
 - **/diary/[id]**: 詳細表示・編集
 - **/tags**: タグ一覧・タグ別記事
 - **/calendar**: カレンダー表示
+- **/settings**: AI設定・モデル選択
 
 ## 🔍 トラブルシューティング
 

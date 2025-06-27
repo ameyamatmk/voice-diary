@@ -7,13 +7,24 @@ import tempfile
 import openai
 from google.cloud import speech
 from pydub import AudioSegment
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from ..database import async_session_factory
+from ..models import UserSettings
 
 
 class TranscriptionService:
     def __init__(self):
+        # 初期設定（環境変数から）
         self.api_type = os.getenv("TRANSCRIBE_API", "mock")
         self.model = os.getenv("TRANSCRIBE_MODEL", "whisper-1")
-        
+        self.openai_client = None
+        self.google_client = None
+        self._setup_clients()
+    
+    def _setup_clients(self):
+        """APIクライアントをセットアップ"""
         # OpenAI API設定
         if self.api_type == "openai":
             openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -27,6 +38,36 @@ class TranscriptionService:
             if not credentials_path:
                 raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable is required for Google transcription")
             self.google_client = speech.SpeechClient()
+    
+    async def _get_settings_from_db(self) -> Dict[str, Any]:
+        """データベースから設定を取得"""
+        try:
+            async with async_session_factory() as db:
+                result = await db.execute(select(UserSettings))
+                settings_rows = result.fetchall()
+                
+                settings = {}
+                for row in settings_rows:
+                    setting = row[0]
+                    settings[setting.key] = setting.value
+                
+                return settings
+        except Exception:
+            # DB接続エラーの場合は環境変数を使用
+            return {}
+    
+    async def _update_config(self):
+        """設定を更新"""
+        db_settings = await self._get_settings_from_db()
+        
+        # データベース設定が存在する場合は優先
+        if "transcribe_api" in db_settings:
+            self.api_type = db_settings["transcribe_api"]
+        if "transcribe_model" in db_settings:
+            self.model = db_settings["transcribe_model"]
+        
+        # クライアントを再セットアップ
+        self._setup_clients()
     
     async def transcribe_audio(self, audio_file_path: str) -> Dict[str, Any]:
         """
@@ -43,6 +84,9 @@ class TranscriptionService:
                 "language": str
             }
         """
+        # 設定を最新に更新
+        await self._update_config()
+        
         if self.api_type == "mock":
             return await self._mock_transcribe()
         elif self.api_type == "openai":

@@ -4,13 +4,24 @@ from typing import Dict, Any
 
 import openai
 import anthropic
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from ..database import async_session_factory
+from ..models import UserSettings
 
 
 class SummaryService:
     def __init__(self):
+        # 初期設定（環境変数から）
         self.api_type = os.getenv("SUMMARY_API", "mock")
         self.model = os.getenv("SUMMARY_MODEL", "gpt-4o-mini")
-        
+        self.openai_client = None
+        self.claude_client = None
+        self._setup_clients()
+    
+    def _setup_clients(self):
+        """APIクライアントをセットアップ"""
         # OpenAI API設定
         if self.api_type == "openai":
             openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -24,6 +35,36 @@ class SummaryService:
             if not claude_api_key:
                 raise ValueError("CLAUDE_API_KEY environment variable is required for Claude summary")
             self.claude_client = anthropic.AsyncAnthropic(api_key=claude_api_key)
+    
+    async def _get_settings_from_db(self) -> Dict[str, Any]:
+        """データベースから設定を取得"""
+        try:
+            async with async_session_factory() as db:
+                result = await db.execute(select(UserSettings))
+                settings_rows = result.fetchall()
+                
+                settings = {}
+                for row in settings_rows:
+                    setting = row[0]
+                    settings[setting.key] = setting.value
+                
+                return settings
+        except Exception:
+            # DB接続エラーの場合は環境変数を使用
+            return {}
+    
+    async def _update_config(self):
+        """設定を更新"""
+        db_settings = await self._get_settings_from_db()
+        
+        # データベース設定が存在する場合は優先
+        if "summary_api" in db_settings:
+            self.api_type = db_settings["summary_api"]
+        if "summary_model" in db_settings:
+            self.model = db_settings["summary_model"]
+        
+        # クライアントを再セットアップ
+        self._setup_clients()
     
     async def summarize_text(self, text: str) -> Dict[str, Any]:
         """
@@ -40,6 +81,9 @@ class SummaryService:
                 "tokens_used": int
             }
         """
+        # 設定を最新に更新
+        await self._update_config()
+        
         if self.api_type == "mock":
             return await self._mock_summarize(text)
         elif self.api_type == "openai":

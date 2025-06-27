@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import engine
 from .models import Base
-from .routers import audio, summary, diary
+from .routers import audio, summary, diary, settings
 
 app = FastAPI(title="Voice Diary API", version="0.1.0")
 
@@ -20,9 +20,10 @@ app.add_middleware(
 )
 
 # ルーター登録
-app.include_router(audio.router)
-app.include_router(summary.router)
-app.include_router(diary.router)
+app.include_router(audio.router, prefix="/api")
+app.include_router(summary.router, prefix="/api")
+app.include_router(diary.router, prefix="/api")
+app.include_router(settings.router, prefix="/api")
 
 
 @app.get("/")
