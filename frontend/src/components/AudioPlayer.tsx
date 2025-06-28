@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, Gauge } from 'lucide-react'
 import '../styles/audio-player.css'
 
 interface AudioPlayerProps {
@@ -19,6 +19,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
   const [duration, setDuration] = useState(0)
   const [isMuted, setIsMuted] = useState(false)
   const [volume, setVolume] = useState(1)
+  const [playbackRate, setPlaybackRate] = useState(1)
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null)
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
   const [dataArray, setDataArray] = useState<Uint8Array | null>(null)
@@ -175,6 +176,16 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
     }
   }
 
+  // 再生速度調整
+  const handlePlaybackRateChange = (rate: number) => {
+    setPlaybackRate(rate)
+    
+    const audio = audioRef.current
+    if (audio) {
+      audio.playbackRate = rate
+    }
+  }
+
   // ミュート切り替え
   const toggleMute = () => {
     const audio = audioRef.current
@@ -274,7 +285,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
           </div>
 
           {/* コントロール */}
-          <div className="flex items-center justify-between audio-controls">
+          <div className="flex items-center justify-between audio-controls flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={togglePlayPause}
@@ -288,27 +299,66 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
               </button>
             </div>
 
-            {/* 音量コントロール */}
-            <div className="flex items-center gap-2 volume-controls">
-              <button
-                onClick={toggleMute}
-                className="text-text-muted hover:text-text-primary transition-colors"
-              >
-                {isMuted ? (
-                  <VolumeX className="w-5 h-5" />
-                ) : (
-                  <Volume2 className="w-5 h-5" />
-                )}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                className="w-20 h-1 bg-bg-tertiary rounded-full outline-none slider volume-bar"
-              />
+            <div className="flex items-center gap-6">
+              {/* 再生速度コントロール */}
+              <div className="flex items-center gap-2">
+                <Gauge className="w-4 h-4 text-text-muted" />
+                <div className="flex bg-bg-tertiary rounded-lg p-1">
+                  <button
+                    onClick={() => handlePlaybackRateChange(1)}
+                    className={`px-3 py-1 text-sm rounded transition-colors ${
+                      playbackRate === 1 
+                        ? 'bg-accent-primary text-white' 
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    1x
+                  </button>
+                  <button
+                    onClick={() => handlePlaybackRateChange(1.5)}
+                    className={`px-3 py-1 text-sm rounded transition-colors ${
+                      playbackRate === 1.5 
+                        ? 'bg-accent-primary text-white' 
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    1.5x
+                  </button>
+                  <button
+                    onClick={() => handlePlaybackRateChange(2)}
+                    className={`px-3 py-1 text-sm rounded transition-colors ${
+                      playbackRate === 2 
+                        ? 'bg-accent-primary text-white' 
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    2x
+                  </button>
+                </div>
+              </div>
+
+              {/* 音量コントロール */}
+              <div className="flex items-center gap-2 volume-controls">
+                <button
+                  onClick={toggleMute}
+                  className="text-text-muted hover:text-text-primary transition-colors"
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-5 h-5" />
+                  ) : (
+                    <Volume2 className="w-5 h-5" />
+                  )}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={isMuted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  className="w-20 h-1 bg-bg-tertiary rounded-full outline-none slider volume-bar"
+                />
+              </div>
             </div>
           </div>
         </>

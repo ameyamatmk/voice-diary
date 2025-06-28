@@ -119,6 +119,24 @@
   transform: scaleY(1.2);
 }
 
+/* 再生速度ボタン */
+.playback-rate-group {
+  transition: all 0.2s ease;
+}
+
+.playback-rate-button {
+  transition: all 0.2s ease;
+  min-width: 36px;
+}
+
+.playback-rate-button:hover {
+  transform: scale(1.05);
+}
+
+.playback-rate-button.active {
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
   .audio-controls {
@@ -132,5 +150,12 @@
   
   .waveform-canvas {
     height: 40px;
+  }
+
+  /* モバイルでは再生速度と音量を縦に配置 */
+  .audio-controls > div:last-child {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
   }
 }
