@@ -98,7 +98,7 @@ class SummaryService:
         await asyncio.sleep(4)  # 実際のAPI呼び出しをシミュレート
         
         summary = "今日は充実した一日でした。様々な活動を通じて多くの学びを得ることができ、個人的な成長を感じています。明日もこの調子で頑張りたいと思います。"
-        title = summary[:20] + "..." if len(summary) > 20 else summary
+        title = "充実した一日の振り返り"
         
         return {
             "summary": summary,
@@ -111,13 +111,17 @@ class SummaryService:
         """OpenAI GPT APIを使用した要約"""
         try:
             # システムプロンプト（日本語音声日記専用）
-            system_prompt = """あなたは日本語の音声日記を要約する専門AIです。以下の指示に従って要約を作成してください：
+            system_prompt = """あなたは日本語の音声日記を要約する専門AIです。以下の指示に従って要約とタイトルを作成してください：
 
 1. 簡潔で読みやすい日本語で要約する
 2. 感情や体験の本質を捉える
 3. 3-5文程度でまとめる
 4. 敬語は使わず、親しみやすい文体で
-5. 重要な出来事や気づきを重視する"""
+5. 重要な出来事や気づきを重視する
+
+出力形式：
+タイトル: [40文字以内で内容を表現する魅力的なタイトル]
+要約: [上記の指示に従った要約文]"""
 
             user_prompt = f"以下の音声から文字起こしされたテキストを要約してください：\n\n{text}"
             
@@ -127,14 +131,14 @@ class SummaryService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=300,
+                max_tokens=400,
                 temperature=0.7
             )
             
-            summary = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content.strip()
             
-            # タイトル生成（要約の最初の部分から）
-            title = summary[:20] + "..." if len(summary) > 20 else summary
+            # タイトルと要約を分離
+            title, summary = self._parse_title_and_summary(content)
             
             return {
                 "summary": summary,
@@ -162,11 +166,13 @@ class SummaryService:
 - 敬語は使わず、親しみやすい文体で
 - 重要な出来事や気づきを重視する
 
-要約："""
+出力形式：
+タイトル: [40文字以内で内容を表現する魅力的なタイトル]
+要約: [上記の指示に従った要約文]"""
 
             response = await self.claude_client.messages.create(
                 model=self.model,
-                max_tokens=300,
+                max_tokens=400,
                 temperature=0.7,
                 messages=[{
                     "role": "user",
@@ -174,10 +180,10 @@ class SummaryService:
                 }]
             )
             
-            summary = response.content[0].text.strip()
+            content = response.content[0].text.strip()
             
-            # タイトル生成（要約の最初の部分から）
-            title = summary[:20] + "..." if len(summary) > 20 else summary
+            # タイトルと要約を分離
+            title, summary = self._parse_title_and_summary(content)
             
             return {
                 "summary": summary,
@@ -188,6 +194,34 @@ class SummaryService:
             
         except Exception as e:
             raise Exception(f"Claude summary failed: {str(e)}")
+    
+    def _parse_title_and_summary(self, content: str) -> tuple[str, str]:
+        """AIレスポンスからタイトルと要約を分離"""
+        lines = content.strip().split('\n')
+        title = ""
+        summary = ""
+        
+        for line in lines:
+            line = line.strip()
+            if line.startswith("タイトル:") or line.startswith("タイトル："):
+                title = line.split(":", 1)[1].strip() if ":" in line else line.split("：", 1)[1].strip()
+            elif line.startswith("要約:") or line.startswith("要約："):
+                summary = line.split(":", 1)[1].strip() if ":" in line else line.split("：", 1)[1].strip()
+            elif not title and line:  # 最初の行がタイトルの場合
+                title = line
+            elif title and not summary and line:  # タイトル後の最初の行が要約の場合
+                summary = line
+        
+        # フォールバック: 分離できない場合は全体を要約として扱い、適当なタイトルを生成
+        if not title and not summary:
+            summary = content
+            title = summary[:30] if len(summary) > 30 else summary
+        elif not summary:
+            summary = content
+        elif not title:
+            title = summary[:30] if len(summary) > 30 else summary
+        
+        return title.strip(), summary.strip()
 
 
 # シングルトンインスタンス
