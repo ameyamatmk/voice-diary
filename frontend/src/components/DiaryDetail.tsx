@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Tag, Calendar, FileText, MessageSquare, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Tag, Calendar, FileText, MessageSquare, Trash2, RefreshCw } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
 import { TagSelector } from './TagSelector'
@@ -26,6 +26,7 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
     tags: entry.tags || [],
   })
   const [hasChanges, setHasChanges] = useState(false)
+  const [regeneratingSummary, setRegeneratingSummary] = useState(false)
 
   // 処理中の場合は定期的に更新
   useEffect(() => {
@@ -141,6 +142,64 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
       alert('保存に失敗しました')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleRegenerateSummary = async () => {
+    if (!editedEntry.transcription || editedEntry.transcription.trim() === '') {
+      alert('文字起こしが空のため、要約を生成できません')
+      return
+    }
+
+    try {
+      setRegeneratingSummary(true)
+      
+      // 現在の編集内容をまず保存
+      if (hasChanges) {
+        await api.updateDiaryEntry(currentEntry.id, editedEntry)
+      }
+      
+      // 要約を再生成
+      const summaryResult = await api.startSummarization(editedEntry.transcription, currentEntry.id)
+      
+      // 要約結果を監視
+      const pollResult = async () => {
+        try {
+          const result = await api.getSummaryResult(summaryResult.task_id)
+          if (result.summary) {
+            // 新しい要約で更新（タイトルはそのまま）
+            const newEditedEntry = {
+              ...editedEntry,
+              summary: result.summary
+            }
+            setEditedEntry(newEditedEntry)
+            
+            // サーバーにも保存
+            const updatedEntry = await api.updateDiaryEntry(currentEntry.id, {
+              summary: result.summary
+            })
+            setCurrentEntry(updatedEntry)
+            onUpdate(updatedEntry)
+            
+            setRegeneratingSummary(false)
+          } else {
+            // まだ処理中の場合は3秒後に再チェック
+            setTimeout(pollResult, 3000)
+          }
+        } catch (error) {
+          console.error('要約結果取得エラー:', error)
+          setRegeneratingSummary(false)
+          alert('要約の生成に失敗しました')
+        }
+      }
+      
+      // 2秒後から結果チェック開始
+      setTimeout(pollResult, 2000)
+      
+    } catch (error) {
+      console.error('要約再生成エラー:', error)
+      alert('要約の再生成に失敗しました')
+      setRegeneratingSummary(false)
     }
   }
 
@@ -270,18 +329,35 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
 
         {/* 要約 */}
         <div className="bg-bg-secondary rounded-lg p-4 border border-border">
-          <h2 className="text-base font-semibold text-text-primary mb-3">要約</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-text-primary">要約</h2>
+            <button
+              onClick={handleRegenerateSummary}
+              disabled={regeneratingSummary || currentEntry.summary_status === 'processing' || !editedEntry.transcription || editedEntry.transcription.trim() === ''}
+              className="flex items-center gap-2 px-3 py-1 bg-accent-primary text-white rounded-lg hover:bg-accent-secondary disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+            >
+              <RefreshCw className={`w-4 h-4 ${regeneratingSummary ? 'animate-spin' : ''}`} />
+              {regeneratingSummary ? '生成中...' : '要約再生成'}
+            </button>
+          </div>
           <textarea
             value={editedEntry.summary || ''}
             onChange={(e) => setEditedEntry(prev => ({ ...prev, summary: e.target.value }))}
             placeholder={
-              currentEntry.summary_status === 'processing' 
-                ? '要約処理中...' 
-                : '要約がここに表示されます...'
+              regeneratingSummary 
+                ? '要約を再生成中...'
+                : currentEntry.summary_status === 'processing' 
+                  ? '要約処理中...' 
+                  : '要約がここに表示されます...'
             }
             className="w-full h-32 bg-bg-tertiary border border-border rounded-lg p-4 text-text-primary placeholder-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary"
-            disabled={currentEntry.summary_status === 'processing'}
+            disabled={currentEntry.summary_status === 'processing' || regeneratingSummary}
           />
+          {editedEntry.transcription && editedEntry.transcription.trim() === '' && (
+            <p className="text-xs text-text-muted mt-2">
+              ※ 文字起こしが入力されていないため、要約を再生成できません
+            </p>
+          )}
         </div>
 
         {/* タグ */}
