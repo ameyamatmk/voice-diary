@@ -12,11 +12,15 @@ interface TagData {
 interface TagSelectorProps {
   selectedTags: string[]
   onTagsChange: (tags: string[]) => void
+  showClickableView?: boolean
+  onTagClick?: (tagName: string) => void
 }
 
 export const TagSelector: React.FC<TagSelectorProps> = ({
   selectedTags,
   onTagsChange,
+  showClickableView = false,
+  onTagClick,
 }) => {
   const [availableTags, setAvailableTags] = useState<TagData[]>([])
   const [newTagInput, setNewTagInput] = useState('')
@@ -80,7 +84,16 @@ export const TagSelector: React.FC<TagSelectorProps> = ({
             key={index}
             className="flex items-center gap-2 px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm"
           >
-            {tag}
+            {showClickableView && onTagClick ? (
+              <button
+                onClick={() => onTagClick(tag)}
+                className="hover:underline"
+              >
+                {tag}
+              </button>
+            ) : (
+              <span>{tag}</span>
+            )}
             <button
               onClick={() => removeTag(tag)}
               className="hover:text-error transition-colors"

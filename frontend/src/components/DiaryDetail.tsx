@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Edit2, Save, X, Tag, Calendar, Clock, FileText, MessageSquare, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Tag, Calendar, FileText, MessageSquare, Trash2 } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
 import { TagSelector } from './TagSelector'
@@ -15,7 +15,6 @@ interface DiaryDetailProps {
 
 export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdate }) => {
   const router = useRouter()
-  const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -26,6 +25,7 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
     summary: entry.summary,
     tags: entry.tags || [],
   })
+  const [hasChanges, setHasChanges] = useState(false)
 
   // 処理中の場合は定期的に更新
   useEffect(() => {
@@ -49,7 +49,45 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
   // propsのentryが変更されたら現在のentryを更新
   useEffect(() => {
     setCurrentEntry(entry)
+    setEditedEntry({
+      title: entry.title,
+      transcription: entry.transcription,
+      summary: entry.summary,
+      tags: entry.tags || [],
+    })
   }, [entry])
+
+  // 変更を監視
+  useEffect(() => {
+    const hasChanged = 
+      editedEntry.title !== currentEntry.title ||
+      editedEntry.transcription !== currentEntry.transcription ||
+      editedEntry.summary !== currentEntry.summary ||
+      JSON.stringify(editedEntry.tags) !== JSON.stringify(currentEntry.tags)
+    
+    setHasChanges(hasChanged)
+  }, [editedEntry, currentEntry])
+
+  // デバウンス付き自動保存
+  useEffect(() => {
+    if (!hasChanges) return
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        setSaving(true)
+        const updatedEntry = await api.updateDiaryEntry(currentEntry.id, editedEntry)
+        setCurrentEntry(updatedEntry)
+        onUpdate(updatedEntry)
+        setHasChanges(false)
+      } catch (error) {
+        console.error('自動保存エラー:', error)
+      } finally {
+        setSaving(false)
+      }
+    }, 1500) // 1.5秒後に保存
+
+    return () => clearTimeout(timeoutId)
+  }, [editedEntry, hasChanges, currentEntry.id, onUpdate])
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -89,28 +127,21 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
     }
   }
 
-  const handleSave = async () => {
+  const handleManualSave = async () => {
+    if (!hasChanges) return
+    
     try {
       setSaving(true)
       const updatedEntry = await api.updateDiaryEntry(currentEntry.id, editedEntry)
+      setCurrentEntry(updatedEntry)
       onUpdate(updatedEntry)
-      setIsEditing(false)
+      setHasChanges(false)
     } catch (error) {
       console.error('保存エラー:', error)
       alert('保存に失敗しました')
     } finally {
       setSaving(false)
     }
-  }
-
-  const handleCancel = () => {
-    setEditedEntry({
-      title: currentEntry.title,
-      transcription: currentEntry.transcription,
-      summary: currentEntry.summary,
-      tags: currentEntry.tags || [],
-    })
-    setIsEditing(false)
   }
 
   const handleTagClick = (tagName: string) => {
@@ -144,62 +175,53 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
           戻る
         </button>
         
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
+        <div className="flex items-center gap-2">
+          {/* 保存状態表示 */}
+          {saving && (
+            <div className="flex items-center gap-2 text-text-muted text-sm">
+              <div className="w-4 h-4 border-2 border-accent-primary border-t-transparent rounded-full animate-spin"></div>
+              保存中...
+            </div>
+          )}
+          {hasChanges && !saving && (
+            <div className="flex items-center gap-2 text-warning text-sm">
+              <div className="w-2 h-2 bg-warning rounded-full"></div>
+              未保存の変更あり
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            {hasChanges && (
               <button
-                onClick={handleCancel}
-                className="flex items-center gap-2 px-4 py-2 text-text-secondary hover:text-text-primary transition-colors"
-              >
-                <X className="w-4 h-4" />
-                キャンセル
-              </button>
-              <button
-                onClick={handleSave}
+                onClick={handleManualSave}
                 disabled={saving}
                 className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-secondary disabled:opacity-50 transition-colors"
               >
                 <Save className="w-4 h-4" />
-                {saving ? '保存中...' : '保存'}
+                今すぐ保存
               </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                削除
-              </button>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-secondary transition-colors"
-              >
-                <Edit2 className="w-4 h-4" />
-                編集
-              </button>
-            </>
-          )}
+            )}
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-error text-white rounded-lg hover:bg-error/90 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              削除
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="space-y-4">
         {/* タイトル */}
         <div className="bg-bg-secondary rounded-lg p-4 border border-border">
-          {isEditing ? (
-            <input
-              type="text"
-              value={editedEntry.title || ''}
-              onChange={(e) => setEditedEntry(prev => ({ ...prev, title: e.target.value }))}
-              placeholder="日記のタイトルを入力..."
-              className="w-full text-2xl font-semibold bg-transparent border-none outline-none text-text-primary placeholder-text-muted"
-            />
-          ) : (
-            <h1 className="text-xl font-semibold text-text-primary break-words">
-              {currentEntry.title || '無題の日記'}
-            </h1>
-          )}
+          <input
+            type="text"
+            value={editedEntry.title || ''}
+            onChange={(e) => setEditedEntry(prev => ({ ...prev, title: e.target.value }))}
+            placeholder="日記のタイトルを入力..."
+            className="w-full text-2xl font-semibold bg-transparent border-none outline-none text-text-primary placeholder-text-muted focus:ring-2 focus:ring-accent-primary/20 rounded px-2 py-1 -mx-2 -my-1"
+          />
           
           <div className="flex items-center gap-3 mt-3 text-sm text-text-muted">
             <div className="flex items-center gap-1">
@@ -233,51 +255,33 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
         {/* 文字起こし */}
         <div className="bg-bg-secondary rounded-lg p-4 border border-border">
           <h2 className="text-base font-semibold text-text-primary mb-3">文字起こし</h2>
-          {isEditing ? (
-            <textarea
-              value={editedEntry.transcription || ''}
-              onChange={(e) => setEditedEntry(prev => ({ ...prev, transcription: e.target.value }))}
-              placeholder="文字起こし結果がここに表示されます..."
-              className="w-full h-40 bg-bg-tertiary border border-border rounded-lg p-4 text-text-primary placeholder-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary"
-            />
-          ) : (
-            <div className="bg-bg-tertiary rounded-lg p-4">
-              {currentEntry.transcription ? (
-                <p className="text-text-primary whitespace-pre-wrap leading-relaxed">
-                  {currentEntry.transcription}
-                </p>
-              ) : (
-                <p className="text-text-muted italic">
-                  {currentEntry.transcription_status === 'processing' ? '文字起こし処理中...' : '文字起こし結果がありません'}
-                </p>
-              )}
-            </div>
-          )}
+          <textarea
+            value={editedEntry.transcription || ''}
+            onChange={(e) => setEditedEntry(prev => ({ ...prev, transcription: e.target.value }))}
+            placeholder={
+              currentEntry.transcription_status === 'processing' 
+                ? '文字起こし処理中...' 
+                : '文字起こし結果がここに表示されます...'
+            }
+            className="w-full h-40 bg-bg-tertiary border border-border rounded-lg p-4 text-text-primary placeholder-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary"
+            disabled={currentEntry.transcription_status === 'processing'}
+          />
         </div>
 
         {/* 要約 */}
         <div className="bg-bg-secondary rounded-lg p-4 border border-border">
           <h2 className="text-base font-semibold text-text-primary mb-3">要約</h2>
-          {isEditing ? (
-            <textarea
-              value={editedEntry.summary || ''}
-              onChange={(e) => setEditedEntry(prev => ({ ...prev, summary: e.target.value }))}
-              placeholder="要約がここに表示されます..."
-              className="w-full h-32 bg-bg-tertiary border border-border rounded-lg p-4 text-text-primary placeholder-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary"
-            />
-          ) : (
-            <div className="bg-bg-tertiary rounded-lg p-4">
-              {currentEntry.summary ? (
-                <p className="text-text-primary leading-relaxed">
-                  {currentEntry.summary}
-                </p>
-              ) : (
-                <p className="text-text-muted italic">
-                  {currentEntry.summary_status === 'processing' ? '要約処理中...' : '要約がありません'}
-                </p>
-              )}
-            </div>
-          )}
+          <textarea
+            value={editedEntry.summary || ''}
+            onChange={(e) => setEditedEntry(prev => ({ ...prev, summary: e.target.value }))}
+            placeholder={
+              currentEntry.summary_status === 'processing' 
+                ? '要約処理中...' 
+                : '要約がここに表示されます...'
+            }
+            className="w-full h-32 bg-bg-tertiary border border-border rounded-lg p-4 text-text-primary placeholder-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-accent-primary"
+            disabled={currentEntry.summary_status === 'processing'}
+          />
         </div>
 
         {/* タグ */}
@@ -287,28 +291,12 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
             <h2 className="text-base font-semibold text-text-primary">タグ</h2>
           </div>
           
-          {isEditing ? (
-            <TagSelector
-              selectedTags={editedEntry.tags || []}
-              onTagsChange={(tags) => setEditedEntry(prev => ({ ...prev, tags }))}
-            />
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {currentEntry.tags && currentEntry.tags.length > 0 ? (
-                currentEntry.tags.map((tag, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleTagClick(tag)}
-                    className="px-3 py-1 bg-accent-primary/10 text-accent-primary rounded-full text-sm hover:bg-accent-primary hover:text-white transition-colors cursor-pointer"
-                  >
-                    {tag}
-                  </button>
-                ))
-              ) : (
-                <p className="text-text-muted italic">タグがありません</p>
-              )}
-            </div>
-          )}
+          <TagSelector
+            selectedTags={editedEntry.tags || []}
+            onTagsChange={(tags) => setEditedEntry(prev => ({ ...prev, tags }))}
+            showClickableView={true}
+            onTagClick={handleTagClick}
+          />
         </div>
       </div>
 
