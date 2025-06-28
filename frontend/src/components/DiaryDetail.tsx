@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Tag, Calendar, FileText, MessageSquare, Trash2, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Save, Tag, Calendar, FileText, MessageSquare, Trash2, RefreshCw, Volume2 } from 'lucide-react'
 import { DiaryEntry } from '@/types'
 import { api } from '@/lib/api'
 import { TagSelector } from './TagSelector'
+import { AudioPlayer } from './AudioPlayer'
 
 interface DiaryDetailProps {
   entry: DiaryEntry
@@ -289,6 +290,14 @@ export const DiaryDetail: React.FC<DiaryDetailProps> = ({ entry, onBack, onUpdat
             </div>
           </div>
         </div>
+
+        {/* 音声再生 */}
+        {currentEntry.audio_file_path && (
+          <AudioPlayer 
+            audioUrl={`/api/audio/file/${currentEntry.file_id}`}
+            title={currentEntry.title || '無題の音声'}
+          />
+        )}
 
         {/* 処理状況 */}
         <div className="bg-bg-secondary rounded-lg p-4 border border-border">

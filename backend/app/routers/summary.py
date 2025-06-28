@@ -7,6 +7,7 @@ from ..database import get_db
 from ..models import DiaryEntry
 from ..schemas import SummarizeRequest, SummarizeResponse, SummarizeResultResponse
 from ..services.summary import summary_service
+from ..services.tag_suggestion import tag_suggestion_service
 
 router = APIRouter(tags=["summary"])
 
@@ -84,6 +85,18 @@ async def get_summary_result(task_id: str, db: Session = Depends(get_db)):
             # タイトルが未設定の場合は自動生成
             if not entry.title:
                 entry.title = result["title"]
+            
+            # 新規録音の場合のみタグ自動提案（タグが未設定かつ要約が初回完了）
+            if not entry.tags and entry.transcription and entry.summary:
+                try:
+                    suggested_tags = await tag_suggestion_service.suggest_tags(
+                        entry.transcription, entry.summary
+                    )
+                    if suggested_tags:
+                        entry.tags = suggested_tags
+                except Exception as e:
+                    print(f"Tag suggestion failed: {str(e)}")
+                    # タグ提案の失敗は処理を継続させる
             
             entry.updated_at = datetime.now(JST)
             

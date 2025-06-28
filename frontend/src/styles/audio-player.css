@@ -1,0 +1,136 @@
+/* 音声プレイヤー専用スタイル */
+
+/* カスタムレンジスライダー（音量調整用） */
+.slider {
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-track {
+  background: var(--bg-tertiary);
+  height: 4px;
+  border-radius: 2px;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  cursor: pointer;
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.slider::-webkit-slider-thumb:hover {
+  background: var(--accent-secondary);
+  transform: scale(1.1);
+}
+
+.slider::-moz-range-track {
+  background: var(--bg-tertiary);
+  height: 4px;
+  border-radius: 2px;
+  border: none;
+}
+
+.slider::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  cursor: pointer;
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.slider::-moz-range-thumb:hover {
+  background: var(--accent-secondary);
+  transform: scale(1.1);
+}
+
+/* 波形キャンバス用のスタイル */
+.waveform-canvas {
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease;
+}
+
+.waveform-canvas:hover {
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+/* 再生ボタンの追加エフェクト */
+.play-button {
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.play-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.play-button:active {
+  transform: scale(0.98);
+}
+
+/* シークバー用のスタイル */
+.seek-bar {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.seek-bar:hover {
+  transform: scaleY(1.5);
+}
+
+.seek-thumb {
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.seek-bar:hover .seek-thumb {
+  opacity: 1;
+}
+
+/* ローディングアニメーション */
+.audio-loading {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* 音量バーの追加エフェクト */
+.volume-bar {
+  transition: all 0.2s ease;
+}
+
+.volume-bar:hover {
+  transform: scaleY(1.2);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .audio-controls {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .volume-controls {
+    justify-content: center;
+  }
+  
+  .waveform-canvas {
+    height: 40px;
+  }
+}

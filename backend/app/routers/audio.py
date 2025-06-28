@@ -1,4 +1,5 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -151,3 +152,38 @@ async def get_transcription_result(task_id: str, db: Session = Depends(get_db)):
         "confidence": 0.0,
         "completed_at": entry.updated_at.isoformat() if entry.updated_at else None
     }
+
+
+@router.get("/audio/file/{file_id}")
+async def get_audio_file(file_id: str, db: Session = Depends(get_db)):
+    """音声ファイルを取得"""
+    # file_idに対応するDiaryEntryを見つける
+    entry = db.query(DiaryEntry).filter(DiaryEntry.file_id == file_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="音声ファイルが見つかりません")
+    
+    # ファイルの存在確認
+    if not entry.audio_file_path or not Path(entry.audio_file_path).exists():
+        raise HTTPException(status_code=404, detail="音声ファイルが存在しません")
+    
+    # ファイルを返す
+    file_path = Path(entry.audio_file_path)
+    
+    # Content-Typeを適切に設定
+    media_type = "audio/webm"
+    if file_path.suffix.lower() == ".mp3":
+        media_type = "audio/mpeg"
+    elif file_path.suffix.lower() == ".wav":
+        media_type = "audio/wav"
+    elif file_path.suffix.lower() == ".ogg":
+        media_type = "audio/ogg"
+    
+    return FileResponse(
+        path=str(file_path),
+        media_type=media_type,
+        filename=f"audio_{file_id}{file_path.suffix}",
+        headers={
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "public, max-age=3600"
+        }
+    )
