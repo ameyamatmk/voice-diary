@@ -12,7 +12,7 @@ from ..schemas import (
     DiaryEntryListResponse
 )
 
-router = APIRouter(prefix="/api", tags=["diary"])
+router = APIRouter(tags=["diary"])
 
 # JST (UTC+9) タイムゾーン定義
 JST = timezone(timedelta(hours=9))

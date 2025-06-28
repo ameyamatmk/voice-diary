@@ -8,7 +8,7 @@ from ..models import DiaryEntry
 from ..schemas import SummarizeRequest, SummarizeResponse, SummarizeResultResponse
 from ..services.summary import summary_service
 
-router = APIRouter(prefix="/api", tags=["summary"])
+router = APIRouter(tags=["summary"])
 
 # JST (UTC+9) タイムゾーン定義
 JST = timezone(timedelta(hours=9))

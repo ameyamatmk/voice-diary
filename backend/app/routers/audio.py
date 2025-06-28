@@ -9,7 +9,7 @@ from ..models import DiaryEntry
 from ..schemas import TranscribeRequest, TranscribeResponse, TranscribeResultResponse
 from ..services.transcription import transcription_service
 
-router = APIRouter(prefix="/api", tags=["audio"])
+router = APIRouter(tags=["audio"])
 
 # JST (UTC+9) タイムゾーン定義
 JST = timezone(timedelta(hours=9))
