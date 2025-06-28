@@ -7,10 +7,25 @@ import { api } from '@/lib/api'
 
 export default function HomePage() {
   const [isProcessing, setIsProcessing] = useState(false)
+  const [enableRealtimeTranscription, setEnableRealtimeTranscription] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
     document.title = '音声録音 - Voice Diary'
+    
+    // 設定を読み込み
+    const fetchSettings = async () => {
+      try {
+        const settings = await api.getSettings()
+        setEnableRealtimeTranscription(settings.enable_realtime_transcription)
+      } catch (error) {
+        console.error('設定の読み込みに失敗:', error)
+        // エラー時はデフォルト値を使用
+        setEnableRealtimeTranscription(true)
+      }
+    }
+    
+    fetchSettings()
   }, [])
 
   const handleRecordingComplete = useCallback(async (audioBlob: Blob) => {
@@ -77,6 +92,7 @@ export default function HomePage() {
       <RecordingInterface 
         onRecordingComplete={handleRecordingComplete}
         disabled={isProcessing}
+        enableRealtimeTranscription={enableRealtimeTranscription}
       />
       
       <div className="text-center space-y-4">

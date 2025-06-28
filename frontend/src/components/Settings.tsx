@@ -9,6 +9,7 @@ interface SettingsConfig {
   transcribe_model: string;
   summary_api: string;
   summary_model: string;
+  enable_realtime_transcription: boolean;
 }
 
 const TRANSCRIBE_OPTIONS = [
@@ -48,7 +49,8 @@ export default function Settings() {
     transcribe_api: 'mock',
     transcribe_model: 'mock-whisper-v1',
     summary_api: 'mock',
-    summary_model: 'mock-gpt-4o-mini'
+    summary_model: 'mock-gpt-4o-mini',
+    enable_realtime_transcription: true
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -83,16 +85,16 @@ export default function Settings() {
     }
   };
 
-  const handleConfigChange = (key: keyof SettingsConfig, value: string) => {
+  const handleConfigChange = (key: keyof SettingsConfig, value: string | boolean) => {
     const newConfig = { ...config, [key]: value };
     
     // API変更時にモデルもデフォルトに変更
-    if (key === 'transcribe_api') {
+    if (key === 'transcribe_api' && typeof value === 'string') {
       const models = TRANSCRIBE_MODELS[value as keyof typeof TRANSCRIBE_MODELS] || [];
       if (models.length > 0) {
         newConfig.transcribe_model = models[0].value;
       }
-    } else if (key === 'summary_api') {
+    } else if (key === 'summary_api' && typeof value === 'string') {
       const models = SUMMARY_MODELS[value as keyof typeof SUMMARY_MODELS] || [];
       if (models.length > 0) {
         newConfig.summary_model = models[0].value;
@@ -232,6 +234,45 @@ export default function Settings() {
                   {getAvailableModels(config.summary_api, 'summary')
                     .find(model => model.value === config.summary_model)?.description}
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* リアルタイム文字起こし設定 */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              ⚡ リアルタイム文字起こし設定
+            </h3>
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.enable_realtime_transcription}
+                      onChange={(e) => handleConfigChange('enable_realtime_transcription', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">
+                        録音中のリアルタイム文字起こしを有効にする
+                      </span>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Web Speech API を使用して録音中にリアルタイムで文字起こしを表示します（参考用・無料）
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="mt-3 text-xs text-yellow-800">
+                <p><strong>注意:</strong></p>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li>リアルタイム表示は参考程度で、録音終了後は高精度なWhisper APIで変換されます</li>
+                  <li>ブラウザによっては対応していない場合があります（Chrome推奨）</li>
+                  <li>ネットワーク接続が必要です</li>
+                </ul>
               </div>
             </div>
           </div>

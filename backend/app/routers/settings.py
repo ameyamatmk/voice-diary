@@ -15,19 +15,22 @@ class SettingsRequest(BaseModel):
     transcribe_model: str
     summary_api: str
     summary_model: str
+    enable_realtime_transcription: bool
 
 class SettingsResponse(BaseModel):
     transcribe_api: str
     transcribe_model: str
     summary_api: str
     summary_model: str
+    enable_realtime_transcription: bool
 
 # 設定のデフォルト値
 DEFAULT_SETTINGS = {
     "transcribe_api": "mock",
     "transcribe_model": "mock-whisper-v1",
     "summary_api": "mock", 
-    "summary_model": "mock-gpt-4o-mini"
+    "summary_model": "mock-gpt-4o-mini",
+    "enable_realtime_transcription": True
 }
 
 @router.get("/settings", response_model=SettingsResponse)
