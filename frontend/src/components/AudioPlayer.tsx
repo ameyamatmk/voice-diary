@@ -23,6 +23,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null)
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
   const [dataArray, setDataArray] = useState<Uint8Array | null>(null)
+  const [waveformData, setWaveformData] = useState<number[] | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,6 +36,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
       setDuration(audio.duration)
       setIsLoading(false)
       setupAudioContext()
+      generateWaveform()
     }
 
     const handleTimeUpdate = () => {
@@ -69,13 +71,30 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
       const audio = audioRef.current
       if (!audio) return
 
+      // 既存のAudioContextがある場合はクリーンアップ
+      if (audioContext) {
+        audioContext.close()
+      }
+
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
       const analyserNode = ctx.createAnalyser()
-      const source = ctx.createMediaElementSource(audio)
       
-      analyserNode.fftSize = 256
-      const bufferLength = analyserNode.frequencyBinCount
+      // 時間領域の音声データ（波形）を取得するための設定
+      analyserNode.fftSize = 512
+      analyserNode.smoothingTimeConstant = 0.3
+      
+      // 時間領域データ用のバッファ（実際の音声波形データ）
+      const bufferLength = analyserNode.fftSize
       const dataArr = new Uint8Array(bufferLength)
+
+      let source: MediaElementAudioSourceNode
+      try {
+        source = ctx.createMediaElementSource(audio)
+      } catch (err) {
+        // 既にsourceが作成されている場合のエラーをキャッチ
+        console.warn('MediaElementSource already exists:', err)
+        return
+      }
 
       source.connect(analyserNode)
       analyserNode.connect(ctx.destination)
@@ -83,43 +102,138 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
       setAudioContext(ctx)
       setAnalyser(analyserNode)
       setDataArray(dataArr)
+      
+      console.log('Web Audio API setup completed successfully')
     } catch (err) {
       console.error('Web Audio API setup failed:', err)
     }
   }
 
-  // 音声波形描画
-  const drawWaveform = () => {
-    if (!canvasRef.current || !analyser || !dataArray) return
+  // 音声ファイル全体の波形データを生成
+  const generateWaveform = async () => {
+    try {
+      // 音声ファイルをArrayBufferとして取得
+      const response = await fetch(audioUrl)
+      const arrayBuffer = await response.arrayBuffer()
+      
+      // Web Audio APIで音声データをデコード
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+      
+      // チャンネルデータを取得（モノラルまたはステレオの最初のチャンネル）
+      const channelData = audioBuffer.getChannelData(0)
+      
+      // 波形データをダウンサンプリング（表示用に300-500ポイントに圧縮）
+      const samples = 400
+      const blockSize = Math.floor(channelData.length / samples)
+      const waveform: number[] = []
+      
+      for (let i = 0; i < samples; i++) {
+        const start = i * blockSize
+        const end = start + blockSize
+        let sum = 0
+        
+        // ブロック内のRMS（Root Mean Square）を計算
+        for (let j = start; j < end && j < channelData.length; j++) {
+          sum += channelData[j] * channelData[j]
+        }
+        
+        const rms = Math.sqrt(sum / blockSize)
+        waveform.push(rms)
+      }
+      
+      setWaveformData(waveform)
+      await audioContext.close()
+      
+    } catch (error) {
+      console.error('Failed to generate waveform:', error)
+    }
+  }
+
+  // 静的波形描画
+  const drawStaticWaveform = () => {
+    if (!canvasRef.current || !waveformData) return
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    analyser.getByteFrequencyData(dataArray)
+    // 高DPI対応のためcanvasサイズを調整
+    const rect = canvas.getBoundingClientRect()
+    const dpr = window.devicePixelRatio || 1
+    
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+    
+    ctx.scale(dpr, dpr)
+    
+    // 背景をクリア
+    ctx.clearRect(0, 0, rect.width, rect.height)
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    // 中央線を描画
+    const centerY = rect.height / 2
+    ctx.strokeStyle = '#e2e8f0'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(0, centerY)
+    ctx.lineTo(rect.width, centerY)
+    ctx.stroke()
 
-    const barWidth = (canvas.width / dataArray.length) * 2.5
-    let barHeight
-    let x = 0
-
-    for (let i = 0; i < dataArray.length; i++) {
-      barHeight = (dataArray[i] / 255) * canvas.height * 0.8
+    // 波形のバーを描画
+    const barWidth = Math.max(1, rect.width / waveformData.length - 1)
+    const maxAmplitude = Math.max(...waveformData)
+    
+    for (let i = 0; i < waveformData.length; i++) {
+      const amplitude = waveformData[i]
+      const normalizedHeight = (amplitude / maxAmplitude) * (rect.height * 0.8)
+      const barHeight = Math.max(2, normalizedHeight)
+      
+      const x = (i / waveformData.length) * rect.width
+      const y = centerY - barHeight / 2
 
       // グラデーション
-      const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight)
+      const gradient = ctx.createLinearGradient(0, centerY + barHeight / 2, 0, centerY - barHeight / 2)
       gradient.addColorStop(0, '#3b82f6')
       gradient.addColorStop(0.5, '#60a5fa')
       gradient.addColorStop(1, '#93c5fd')
 
       ctx.fillStyle = gradient
-      ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight)
-
-      x += barWidth + 1
+      ctx.fillRect(x, y, barWidth, barHeight)
     }
+  }
 
-    if (isPlaying) {
+  // 波形描画の更新
+  const drawWaveform = () => {
+    drawStaticWaveform()
+    
+    if (isPlaying && analyser && dataArray) {
+      // リアルタイム音量レベル表示（オプション）
+      analyser.getByteTimeDomainData(dataArray)
+      
+      let sum = 0
+      for (let i = 0; i < dataArray.length; i++) {
+        const value = dataArray[i] - 128
+        sum += value * value
+      }
+      const rms = Math.sqrt(sum / dataArray.length)
+      const volumeLevel = rms / 128
+
+      // 音量インジケーター（右上に小さく表示）
+      if (volumeLevel > 0.01 && canvasRef.current) {
+        const canvas = canvasRef.current
+        const ctx = canvas.getContext('2d')
+        const rect = canvas.getBoundingClientRect()
+        
+        if (ctx) {
+          const indicatorSize = 8
+          const x = rect.width - indicatorSize - 4
+          const y = 4
+          
+          ctx.fillStyle = `rgba(16, 185, 129, ${volumeLevel})`
+          ctx.fillRect(x, y, indicatorSize, indicatorSize)
+        }
+      }
+      
       animationFrameRef.current = requestAnimationFrame(drawWaveform)
     }
   }
@@ -203,6 +317,29 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
+  // 波形データが読み込まれたら描画
+  useEffect(() => {
+    if (waveformData) {
+      drawStaticWaveform()
+    }
+  }, [waveformData])
+
+  // Canvas リサイズ対応
+  useEffect(() => {
+    const handleResize = () => {
+      if (canvasRef.current) {
+        if (waveformData) {
+          drawStaticWaveform()
+        } else if (isPlaying) {
+          drawWaveform()
+        }
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [isPlaying, waveformData])
+
   // クリーンアップ
   useEffect(() => {
     return () => {
@@ -250,9 +387,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
           <div className="relative">
             <canvas
               ref={canvasRef}
-              width={400}
-              height={60}
-              className="w-full h-15 bg-bg-tertiary rounded border border-border waveform-canvas"
+              className="w-full h-16 bg-bg-tertiary rounded border border-border waveform-canvas"
+              style={{ width: '100%', height: '64px' }}
             />
             
             {/* 進捗オーバーレイ */}
@@ -260,6 +396,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl, title }) => 
               className="absolute top-0 left-0 h-full bg-accent-primary/20 rounded pointer-events-none"
               style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
             />
+            
+            {/* デバッグ情報（開発時のみ） */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="absolute top-1 right-1 text-xs text-text-muted bg-bg-primary/80 px-2 py-1 rounded">
+                {waveformData ? `Waveform: ${waveformData.length} points` : 'Loading waveform...'} | {isPlaying ? 'Playing' : 'Paused'}
+              </div>
+            )}
           </div>
 
           {/* シークバー */}
