@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { Navigation } from '@/components/Navigation'
+import { AuthProvider } from '@/hooks/useAuth'
+import AuthGuard from '@/components/AuthGuard'
 import '../globals.css'
 
 export const metadata: Metadata = {
@@ -16,26 +16,11 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        <div className="min-h-screen bg-bg-primary">
-          <header className="sticky top-0 z-50 bg-bg-primary/80 backdrop-blur-md border-b border-border">
-            <div className="container mx-auto px-3 py-2">
-              <div className="flex items-center justify-between">
-                <Link href="/" className="text-xl font-bold text-text-primary hover:text-accent-primary transition-colors">
-                  Voice Diary
-                </Link>
-                <Navigation />
-              </div>
-            </div>
-          </header>
-
-          <main className="container mx-auto px-3 py-4 max-w-5xl">
+        <AuthProvider>
+          <AuthGuard>
             {children}
-          </main>
-
-          <footer className="mt-auto py-3 text-center text-text-muted">
-            <p>&copy; 2025 Voice Diary</p>
-          </footer>
-        </div>
+          </AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   )

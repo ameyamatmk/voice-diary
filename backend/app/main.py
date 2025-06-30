@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import engine
 from .models import Base
-from .routers import audio, summary, diary, settings
+from .routers import audio, summary, diary, settings, auth
 
 app = FastAPI(title="Voice Diary API", version="0.1.0")
 
@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 # ルーター登録
+app.include_router(auth.router)  # 認証は prefix="/api" が auth.py で既に設定済み
 app.include_router(audio.router, prefix="/api")
 app.include_router(summary.router, prefix="/api")
 app.include_router(diary.router, prefix="/api")

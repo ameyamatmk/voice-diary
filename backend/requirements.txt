@@ -22,3 +22,7 @@ openai==1.51.2
 anthropic==0.40.0
 google-cloud-speech==2.28.0
 pydub==0.25.1
+
+# WebAuthn認証ライブラリ
+webauthn==2.2.0
+cryptography==41.0.7

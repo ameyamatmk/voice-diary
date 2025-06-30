@@ -3,10 +3,12 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Mic, BookOpen, Home, Hash, Calendar, Search, Settings } from 'lucide-react'
+import { Mic, BookOpen, Home, Hash, Calendar, Search, Settings, User, LogOut } from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
 
 export const Navigation: React.FC = () => {
   const pathname = usePathname()
+  const { user, isAuthenticated, logout } = useAuth()
 
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true
@@ -14,8 +16,13 @@ export const Navigation: React.FC = () => {
     return false
   }
 
+  const handleLogout = async () => {
+    await logout()
+  }
+
   return (
-    <nav className="flex items-center gap-2">
+    <div className="flex items-center justify-between w-full">
+      <nav className="flex items-center gap-2">
       <Link
         href="/"
         className={`flex items-center gap-2 px-2 py-1 rounded-lg transition-colors ${
@@ -88,5 +95,25 @@ export const Navigation: React.FC = () => {
         <span className="hidden sm:inline">設定</span>
       </Link>
     </nav>
+
+    {/* 認証状態表示 */}
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 px-2 py-1 bg-bg-secondary rounded-lg">
+          <User className="w-4 h-4 text-text-secondary" />
+          <span className="text-sm text-text-primary hidden sm:inline">
+            {user?.display_name || user?.username}
+          </span>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 px-2 py-1 text-text-secondary hover:text-text-primary hover:bg-bg-secondary rounded-lg transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline">ログアウト</span>
+        </button>
+      </div>
+    </div>
+    </div>
   )
 }

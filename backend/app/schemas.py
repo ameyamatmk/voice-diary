@@ -74,3 +74,68 @@ class SummarizeResultResponse(BaseModel):
     status: str
     summary: Optional[str] = None
     completed_at: Optional[datetime] = None
+
+# 認証関連スキーマ
+class UserCreate(BaseModel):
+    username: str
+    display_name: Optional[str] = None
+    email: Optional[str] = None
+
+class UserResponse(BaseModel):
+    id: UUID
+    username: str
+    display_name: Optional[str]
+    email: Optional[str]
+    is_active: bool
+    is_admin: bool
+    created_at: datetime
+    last_login: Optional[datetime]
+    
+    class Config:
+        from_attributes = True
+
+class WebAuthnRegistrationStartRequest(BaseModel):
+    username: str
+    display_name: Optional[str] = None
+
+class WebAuthnRegistrationStartResponse(BaseModel):
+    challenge: str
+    user_id: str
+    rp_id: str
+    rp_name: str
+    options: Dict[str, Any]
+
+class WebAuthnRegistrationCompleteRequest(BaseModel):
+    credential_id: str
+    attestation_object: str
+    client_data_json: str
+    user_id: str
+    device_name: Optional[str] = None
+
+class WebAuthnRegistrationCompleteResponse(BaseModel):
+    success: bool
+    user_id: UUID
+    message: str
+
+class WebAuthnAuthenticationStartRequest(BaseModel):
+    username: Optional[str] = None
+
+class WebAuthnAuthenticationStartResponse(BaseModel):
+    challenge: str
+    options: Dict[str, Any]
+
+class WebAuthnAuthenticationCompleteRequest(BaseModel):
+    credential_id: str
+    authenticator_data: str
+    client_data_json: str
+    signature: str
+
+class WebAuthnAuthenticationCompleteResponse(BaseModel):
+    success: bool
+    user: Optional[UserResponse] = None
+    access_token: Optional[str] = None
+    message: str
+
+class CurrentUserResponse(BaseModel):
+    user: UserResponse
+    authenticated: bool
