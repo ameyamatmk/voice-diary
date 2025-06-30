@@ -9,8 +9,6 @@ import { Key, UserPlus, LogIn, AlertCircle, CheckCircle, ArrowLeft } from 'lucid
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [deviceName, setDeviceName] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | null>(null);
   
@@ -37,25 +35,23 @@ export default function LoginPage() {
 
     if (mode === 'register') {
       if (!username.trim()) {
-        setMessage('Username is required');
+        setMessage('識別名を入力してください');
         setMessageType('error');
         return;
       }
 
       const result = await register(
-        username.trim(),
-        displayName.trim() || undefined,
-        deviceName.trim() || undefined
+        username.trim()
       );
 
       setMessage(result.message);
       setMessageType(result.success ? 'success' : 'error');
 
       if (result.success) {
-        // 登録成功後、ログインモードに切り替え
+        // デバイス登録成功後、ログインモードに切り替え
         setTimeout(() => {
           setMode('login');
-          setMessage('Registration successful! Please log in.');
+          setMessage('デバイス登録が完了しました。ログインしてください。');
           setMessageType('success');
         }, 2000);
       }
@@ -73,8 +69,6 @@ export default function LoginPage() {
 
   const resetForm = () => {
     setUsername('');
-    setDisplayName('');
-    setDeviceName('');
     setMessage('');
     setMessageType(null);
   };
@@ -97,7 +91,7 @@ export default function LoginPage() {
         <div className="bg-bg-secondary rounded-xl p-6 shadow-lg border border-border">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-semibold text-text-primary">
-              {mode === 'login' ? 'ログイン' : 'アカウント登録'}
+              {mode === 'login' ? 'ログイン' : 'デバイス登録'}
             </h2>
           </div>
 
@@ -138,56 +132,29 @@ export default function LoginPage() {
           {/* フォーム */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
-              <>
-                <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-text-primary mb-2">
-                    ユーザー名 *
-                  </label>
-                  <input
-                    type="text"
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent-primary bg-bg-primary text-text-primary"
-                    placeholder="ユーザー名を入力"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="displayName" className="block text-sm font-medium text-text-primary mb-2">
-                    表示名
-                  </label>
-                  <input
-                    type="text"
-                    id="displayName"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent-primary bg-bg-primary text-text-primary"
-                    placeholder="表示名を入力（オプション）"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="deviceName" className="block text-sm font-medium text-text-primary mb-2">
-                    デバイス名
-                  </label>
-                  <input
-                    type="text"
-                    id="deviceName"
-                    value={deviceName}
-                    onChange={(e) => setDeviceName(e.target.value)}
-                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent-primary bg-bg-primary text-text-primary"
-                    placeholder="デバイス名を入力（オプション）"
-                  />
-                </div>
-              </>
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-text-primary mb-2">
+                  識別名 *
+                </label>
+                <input
+                  type="text"
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent-primary bg-bg-primary text-text-primary"
+                  placeholder="識別名を入力（例: あなたの名前）"
+                  required
+                />
+                <p className="text-xs text-text-muted mt-1">
+                  表示名やデバイス名は、ログイン後の設定画面で変更できます。
+                </p>
+              </div>
             )}
 
             {mode === 'login' && (
               <div>
                 <label htmlFor="loginUsername" className="block text-sm font-medium text-text-primary mb-2">
-                  ユーザー名（オプション）
+                  識別名（オプション）
                 </label>
                 <input
                   type="text"
@@ -195,10 +162,10 @@ export default function LoginPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-accent-primary bg-bg-primary text-text-primary"
-                  placeholder="ユーザー名を入力（省略可）"
+                  placeholder="識別名を入力（省略可）"
                 />
                 <p className="text-xs text-text-muted mt-1">
-                  ユーザー名を省略すると、登録済みの認証情報から選択できます。
+                  識別名を省略すると、このデバイスに登録済みの認証情報から選択できます。
                 </p>
               </div>
             )}
@@ -213,7 +180,7 @@ export default function LoginPage() {
               </div>
               <p className="text-xs text-blue-800 dark:text-blue-200">
                 {mode === 'register' 
-                  ? 'このデバイスの生体認証やPINを使用してアカウントを登録します。'
+                  ? 'このデバイスの生体認証やPINを使用してログイン設定を行います。'
                   : 'このデバイスの生体認証やPINを使用してログインします。'
                 }
               </p>
@@ -232,20 +199,20 @@ export default function LoginPage() {
               ) : (
                 <LogIn className="h-5 w-5 mr-2" />
               )}
-              {isLoading ? '処理中...' : mode === 'register' ? '登録' : 'ログイン'}
+              {isLoading ? '処理中...' : mode === 'register' ? 'デバイス登録' : 'ログイン'}
             </button>
           </form>
 
           {/* モード切り替え */}
           <div className="mt-6 text-center">
             <p className="text-sm text-text-secondary">
-              {mode === 'login' ? 'アカウントをお持ちでない方は' : 'すでにアカウントをお持ちの方は'}
+              {mode === 'login' ? '初回利用の場合は' : 'すでに設定済みの場合は'}
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'register' : 'login')}
                 className="ml-1 text-accent-primary hover:text-accent-secondary font-medium transition-colors"
               >
-                {mode === 'login' ? 'こちらから登録' : 'こちらからログイン'}
+                {mode === 'login' ? 'デバイス登録' : 'ログイン'}
               </button>
             </p>
           </div>

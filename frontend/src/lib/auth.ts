@@ -40,11 +40,10 @@ interface WebAuthnAuthenticationOptions {
 // 認証 API クライアント
 export class AuthAPI {
   // WebAuthn 登録開始
-  static async startRegistration(username: string, displayName?: string) {
+  static async startRegistration(username: string) {
     console.log('Making request to registration start endpoint');
     const response = await api.post('/api/auth/register/start', {
       username,
-      display_name: displayName,
     });
     
     console.log('Response status:', response.status);
@@ -62,8 +61,7 @@ export class AuthAPI {
   // WebAuthn 登録完了
   static async completeRegistration(
     credential: PublicKeyCredential,
-    userId: string,
-    deviceName?: string
+    userId: string
   ) {
     const credResponse = credential.response as AuthenticatorAttestationResponse;
     
@@ -72,7 +70,6 @@ export class AuthAPI {
       attestation_object: bufferToBase64url(credResponse.attestationObject),
       client_data_json: bufferToBase64url(credResponse.clientDataJSON),
       user_id: userId,
-      device_name: deviceName,
     };
 
     const response = await api.post('/api/auth/register/complete', registrationData);
@@ -152,10 +149,54 @@ export class AuthAPI {
     
     return response.json();
   }
+
+  // プロフィール更新
+  static async updateProfile(data: { display_name?: string }) {
+    const response = await api.put('/api/auth/profile', data);
+    
+    if (!response.ok) {
+      throw new Error(`Update profile failed: ${response.status}`);
+    }
+    
+    return response.json();
+  }
+
+  // 登録デバイス一覧取得
+  static async getDevices() {
+    const response = await api.get('/api/auth/devices');
+    
+    if (!response.ok) {
+      throw new Error(`Get devices failed: ${response.status}`);
+    }
+    
+    return response.json();
+  }
+
+  // デバイス削除
+  static async deleteDevice(deviceId: string) {
+    const response = await api.delete(`/api/auth/devices/${deviceId}`);
+    
+    if (!response.ok) {
+      throw new Error(`Delete device failed: ${response.status}`);
+    }
+    
+    return response.json();
+  }
+
+  // デバイス名更新
+  static async updateDevice(deviceId: string, data: { device_name?: string }) {
+    const response = await api.put(`/api/auth/devices/${deviceId}`, data);
+    
+    if (!response.ok) {
+      throw new Error(`Update device failed: ${response.status}`);
+    }
+    
+    return response.json();
+  }
 }
 
 // WebAuthn 登録フロー
-export async function registerWithWebAuthn(username: string, displayName?: string, deviceName?: string) {
+export async function registerWithWebAuthn(username: string) {
   try {
     // WebAuthn がサポートされているかチェック
     if (!window.PublicKeyCredential) {
@@ -163,7 +204,7 @@ export async function registerWithWebAuthn(username: string, displayName?: strin
     }
 
     // 1. 登録開始
-    const startResponse = await AuthAPI.startRegistration(username, displayName);
+    const startResponse = await AuthAPI.startRegistration(username);
     const options: WebAuthnRegistrationOptions = startResponse.options;
 
     // 2. 認証情報作成オプション設定
@@ -202,8 +243,7 @@ export async function registerWithWebAuthn(username: string, displayName?: strin
     // 4. 登録完了
     const completeResponse = await AuthAPI.completeRegistration(
       credential,
-      startResponse.user_id,
-      deviceName
+      startResponse.user_id
     );
 
     return {

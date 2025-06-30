@@ -110,7 +110,6 @@ class WebAuthnRegistrationCompleteRequest(BaseModel):
     attestation_object: str
     client_data_json: str
     user_id: str
-    device_name: Optional[str] = None
 
 class WebAuthnRegistrationCompleteResponse(BaseModel):
     success: bool

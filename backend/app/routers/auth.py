@@ -62,8 +62,8 @@ else:
     RP_NAME = os.getenv("RP_NAME", "Voice Diary")
     ORIGIN = os.getenv("ORIGIN", "https://diary.homelab.local")
 
-# JWT認証
-security = HTTPBearer()
+# JWT認証（オプション：Cookieも対応）
+security = HTTPBearer(auto_error=False)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -75,23 +75,51 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def verify_token(request: Request, credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    token = None
+    
+    print(f"Debug: Cookies available: {list(request.cookies.keys())}")
+    print(f"Debug: Authorization header present: {credentials is not None}")
+    
+    # 1. Cookieからトークンを取得を試行
+    if "access_token" in request.cookies:
+        cookie_value = request.cookies["access_token"]
+        print(f"Debug: Found cookie value: {cookie_value[:50]}...")
+        if cookie_value.startswith("Bearer "):
+            token = cookie_value[7:]  # "Bearer " を除去
+            print(f"Debug: Extracted token from cookie: {token[:20]}...")
+    
+    # 2. Authorizationヘッダーからトークンを取得を試行
+    elif credentials:
+        token = credentials.credentials
+        print(f"Debug: Got token from header: {token[:20]}...")
+    
+    if not token:
+        print("Debug: No token found in cookies or headers")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No token provided",
+        )
+    
     try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
+            print("Debug: Token decoded but no user_id found")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate credentials",
             )
+        print(f"Debug: Successfully authenticated user: {user_id}")
         return user_id
-    except JWTError:
+    except JWTError as e:
+        print(f"Debug: JWT decode error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
         )
 
-def get_current_user(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
+def get_current_user(db: Session = Depends(get_db), user_id: str = Depends(verify_token)):
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(
@@ -187,7 +215,7 @@ async def complete_registration(
             user_id=user.id,
             credential_id=credential_id_bytes,
             public_key=attestation_bytes,
-            device_name=request.device_name or "Unknown Device",
+            device_name="登録デバイス",
             device_type="platform"
         )
         
@@ -329,6 +357,111 @@ async def get_current_user_info(
         user=UserResponse.model_validate(current_user),
         authenticated=True
     )
+
+# ユーザー情報更新
+@router.put("/profile", response_model=UserResponse)
+async def update_profile(
+    update_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # 表示名の更新
+    if "display_name" in update_data:
+        current_user.display_name = update_data["display_name"]
+    
+    current_user.updated_at = datetime.now(JST)
+    db.commit()
+    db.refresh(current_user)
+    
+    return UserResponse.model_validate(current_user)
+
+# 登録デバイス一覧取得（全デバイス）
+@router.get("/devices", response_model=list[dict])
+async def get_all_devices(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # 一人運用なので、すべてのデバイスを取得
+    devices = db.query(WebAuthnCredential).all()
+    
+    return [
+        {
+            "id": str(device.id),
+            "device_name": device.device_name,
+            "device_type": device.device_type,
+            "user_name": db.query(User).filter(User.id == device.user_id).first().username,
+            "created_at": device.created_at,
+            "last_used": device.last_used,
+        }
+        for device in devices
+    ]
+
+# 登録デバイス削除（全デバイス対象）
+@router.delete("/devices/{device_id}")
+async def delete_device(
+    device_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    device = db.query(WebAuthnCredential).filter(
+        WebAuthnCredential.id == device_id
+    ).first()
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device not found"
+        )
+    
+    # 最後のデバイスは削除不可（全体で最低1つ）
+    total_device_count = db.query(WebAuthnCredential).count()
+    
+    if total_device_count <= 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete the last device"
+        )
+    
+    db.delete(device)
+    db.commit()
+    
+    return {"message": "Device deleted successfully"}
+
+# デバイス名更新（全デバイス対象）
+@router.put("/devices/{device_id}")
+async def update_device(
+    device_id: str,
+    update_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    device = db.query(WebAuthnCredential).filter(
+        WebAuthnCredential.id == device_id
+    ).first()
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device not found"
+        )
+    
+    if "device_name" in update_data:
+        device.device_name = update_data["device_name"]
+    
+    db.commit()
+    db.refresh(device)
+    
+    # ユーザー名も取得して返す
+    user = db.query(User).filter(User.id == device.user_id).first()
+    
+    return {
+        "id": str(device.id),
+        "device_name": device.device_name,
+        "device_type": device.device_type,
+        "user_name": user.username if user else "Unknown",
+        "created_at": device.created_at,
+        "last_used": device.last_used,
+    }
 
 # ユーザー一覧（管理者のみ）
 @router.get("/users", response_model=list[UserResponse])

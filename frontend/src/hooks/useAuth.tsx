@@ -5,7 +5,7 @@ import { User, AuthState, AuthAPI } from '../lib/auth';
 
 interface AuthContextType extends AuthState {
   login: (username?: string) => Promise<{ success: boolean; message: string }>;
-  register: (username: string, displayName?: string, deviceName?: string) => Promise<{ success: boolean; message: string }>;
+  register: (username: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -71,12 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (username: string, displayName?: string, deviceName?: string) => {
+  const register = async (username: string) => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
     
     try {
       const { registerWithWebAuthn } = await import('../lib/auth');
-      const result = await registerWithWebAuthn(username, displayName, deviceName);
+      const result = await registerWithWebAuthn(username);
       
       if (result.success) {
         // 登録成功後は自動的にログイン状態にはしない
