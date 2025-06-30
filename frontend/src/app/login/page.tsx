@@ -97,10 +97,10 @@ export default function LoginPage() {
 
           {/* WebAuthn サポートチェック */}
           {!isWebAuthnSupported() && (
-            <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+            <div className="mb-4 p-3 bg-warning-light border border-warning rounded-md">
               <div className="flex items-center">
-                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <AlertCircle className="h-5 w-5 text-warning mr-2" />
+                <p className="text-sm text-warning">
                   このブラウザではWebAuthnがサポートされていません。
                 </p>
               </div>
@@ -111,18 +111,18 @@ export default function LoginPage() {
           {message && (
             <div className={`mb-4 p-3 rounded-md flex items-center ${
               messageType === 'success' 
-                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
-                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                ? 'bg-success-light border border-success' 
+                : 'bg-error-light border border-error'
             }`}>
               {messageType === 'success' ? (
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
+                <CheckCircle className="h-5 w-5 text-success mr-2" />
               ) : (
-                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
+                <AlertCircle className="h-5 w-5 text-error mr-2" />
               )}
               <p className={`text-sm ${
                 messageType === 'success' 
-                  ? 'text-green-800 dark:text-green-200' 
-                  : 'text-red-800 dark:text-red-200'
+                  ? 'text-success' 
+                  : 'text-error'
               }`}>
                 {message}
               </p>
@@ -171,14 +171,14 @@ export default function LoginPage() {
             )}
 
             {/* WebAuthn説明 */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md">
+            <div className="bg-info-light p-3 rounded-md">
               <div className="flex items-center mb-2">
-                <Key className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
-                <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                <Key className="h-5 w-5 text-info mr-2" />
+                <h3 className="text-sm font-medium text-info">
                   WebAuthn（パスキー）認証
                 </h3>
               </div>
-              <p className="text-xs text-blue-800 dark:text-blue-200">
+              <p className="text-xs text-info">
                 {mode === 'register' 
                   ? 'このデバイスの生体認証やPINを使用してログイン設定を行います。'
                   : 'このデバイスの生体認証やPINを使用してログインします。'

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Mic, BookOpen, Home, Hash, Calendar, Search, Settings, User, LogOut } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import ThemeToggle from './ThemeToggle'
 
 export const Navigation: React.FC = () => {
   const pathname = usePathname()
@@ -96,8 +97,12 @@ export const Navigation: React.FC = () => {
       </Link>
     </nav>
 
-    {/* 認証状態表示 */}
-    <div className="flex items-center gap-2">
+    {/* 右側のコントロール */}
+    <div className="flex items-center gap-3">
+      {/* テーマ切り替え */}
+      <ThemeToggle />
+      
+      {/* 認証状態表示 */}
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-2 px-2 py-1 bg-bg-secondary rounded-lg">
           <User className="w-4 h-4 text-text-secondary" />

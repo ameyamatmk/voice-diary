@@ -147,7 +147,7 @@ export const DiaryCard: React.FC<DiaryCardProps> = ({
     return parts.map((part, index) => {
       if (regex.test(part)) {
         return (
-          <mark key={index} className="bg-yellow-200 text-yellow-900 rounded px-1">
+          <mark key={index} className="bg-warning-light text-warning rounded px-1">
             {part}
           </mark>
         )

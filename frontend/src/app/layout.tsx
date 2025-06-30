@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { AuthProvider } from '@/hooks/useAuth'
 import AuthGuard from '@/components/AuthGuard'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import ThemeScript from '@/components/ThemeScript'
 import '../globals.css'
 
 export const metadata: Metadata = {
@@ -15,12 +17,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
+      <head>
+        <ThemeScript />
+      </head>
       <body>
-        <AuthProvider>
-          <AuthGuard>
-            {children}
-          </AuthGuard>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <AuthGuard>
+              {children}
+            </AuthGuard>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

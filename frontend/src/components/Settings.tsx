@@ -273,53 +273,53 @@ export default function Settings() {
             <div className="space-y-8">
               {/* 文字起こし設定 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-text-900 flex items-center gap-2">
                   🎤 文字起こし設定
                 </h3>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-700 mb-2">
                       APIプロバイダー
                     </label>
                     <div className="relative">
                       <select
                         value={config.transcribe_api}
                         onChange={(e) => handleConfigChange('transcribe_api', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-bg-surface text-text-900 border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
                       >
                         {TRANSCRIBE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value} className="bg-white text-gray-900">
+                          <option key={option.value} value={option.value} className="bg-bg-surface text-text-900">
                             {option.label}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-400 pointer-events-none" />
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-text-500 mt-1">
                       {TRANSCRIBE_OPTIONS.find(opt => opt.value === config.transcribe_api)?.description}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-700 mb-2">
                       モデル
                     </label>
                     <div className="relative">
                       <select
                         value={config.transcribe_model}
                         onChange={(e) => handleConfigChange('transcribe_model', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-bg-surface text-text-900 border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
                       >
                         {getAvailableModels(config.transcribe_api, 'transcribe').map((model) => (
-                          <option key={model.value} value={model.value} className="bg-white text-gray-900">
+                          <option key={model.value} value={model.value} className="bg-bg-surface text-text-900">
                             {model.label}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-400 pointer-events-none" />
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-text-500 mt-1">
                       {getAvailableModels(config.transcribe_api, 'transcribe')
                         .find(model => model.value === config.transcribe_model)?.description}
                     </p>
@@ -329,53 +329,53 @@ export default function Settings() {
 
               {/* 要約設定 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-text-900 flex items-center gap-2">
                   📝 要約設定
                 </h3>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-700 mb-2">
                       APIプロバイダー
                     </label>
                     <div className="relative">
                       <select
                         value={config.summary_api}
                         onChange={(e) => handleConfigChange('summary_api', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-bg-surface text-text-900 border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
                       >
                         {SUMMARY_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value} className="bg-white text-gray-900">
+                          <option key={option.value} value={option.value} className="bg-bg-surface text-text-900">
                             {option.label}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-400 pointer-events-none" />
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-text-500 mt-1">
                       {SUMMARY_OPTIONS.find(opt => opt.value === config.summary_api)?.description}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-700 mb-2">
                       モデル
                     </label>
                     <div className="relative">
                       <select
                         value={config.summary_model}
                         onChange={(e) => handleConfigChange('summary_model', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-white text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-bg-surface text-text-900 border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
                       >
                         {getAvailableModels(config.summary_api, 'summary').map((model) => (
-                          <option key={model.value} value={model.value} className="bg-white text-gray-900">
+                          <option key={model.value} value={model.value} className="bg-bg-surface text-text-900">
                             {model.label}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-400 pointer-events-none" />
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-text-500 mt-1">
                       {getAvailableModels(config.summary_api, 'summary')
                         .find(model => model.value === config.summary_model)?.description}
                     </p>
@@ -385,11 +385,11 @@ export default function Settings() {
 
               {/* リアルタイム文字起こし設定 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-text-900 flex items-center gap-2">
                   ⚡ リアルタイム文字起こし設定
                 </h3>
                 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="bg-warning-light border border-warning rounded-lg p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex-1">
                       <label className="flex items-center gap-3 cursor-pointer">
@@ -397,13 +397,13 @@ export default function Settings() {
                           type="checkbox"
                           checked={config.enable_realtime_transcription}
                           onChange={(e) => handleConfigChange('enable_realtime_transcription', e.target.checked)}
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          className="w-4 h-4 text-accent-primary bg-bg-tertiary border-border rounded focus:ring-accent-primary focus:ring-2"
                         />
                         <div>
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-text-900">
                             録音中のリアルタイム文字起こしを有効にする
                           </span>
-                          <p className="text-xs text-gray-600 mt-1">
+                          <p className="text-xs text-text-600 mt-1">
                             Web Speech API を使用して録音中にリアルタイムで文字起こしを表示します（参考用・無料）
                           </p>
                         </div>
@@ -414,20 +414,20 @@ export default function Settings() {
               </div>
 
               {/* コスト目安 */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">💰 コスト目安（月間100分想定）</h4>
+              <div className="bg-info-light border border-info rounded-lg p-4">
+                <h4 className="font-semibold text-info mb-2">💰 コスト目安（月間100分想定）</h4>
                 <div className="grid md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <strong className="text-blue-800">文字起こし:</strong>
-                    <ul className="mt-1 text-blue-700">
+                    <strong className="text-info">文字起こし:</strong>
+                    <ul className="mt-1 text-info">
                       <li>• Mock: 無料</li>
                       <li>• OpenAI Whisper: ~$0.6</li>
                       <li>• Google Cloud: ~$2.4</li>
                     </ul>
                   </div>
                   <div>
-                    <strong className="text-blue-800">要約:</strong>
-                    <ul className="mt-1 text-blue-700">
+                    <strong className="text-info">要約:</strong>
+                    <ul className="mt-1 text-info">
                       <li>• Mock: 無料</li>
                       <li>• GPT-4o Mini: ~$0.015</li>
                       <li>• Claude 3 Haiku: ~$0.04</li>
@@ -437,10 +437,10 @@ export default function Settings() {
               </div>
 
               {/* AI設定保存ボタン */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-4 border-t border-border">
                 <div className="flex items-center gap-2">
                   {message && (
-                    <span className={`text-sm ${message.includes('エラー') ? 'text-red-600' : 'text-green-600'}`}>
+                    <span className={`text-sm ${message.includes('エラー') ? 'text-error' : 'text-success'}`}>
                       {message}
                     </span>
                   )}
@@ -449,7 +449,7 @@ export default function Settings() {
                 <div className="flex gap-3">
                   <button
                     onClick={fetchSettings}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 text-text-600 hover:text-text-800 transition-colors flex items-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
                     リセット
@@ -458,7 +458,7 @@ export default function Settings() {
                   <button
                     onClick={saveSettings}
                     disabled={loading}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    className="px-6 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                   >
                     {loading ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -514,7 +514,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between pt-6 border-t border-border mt-6">
                   <div className="flex items-center gap-2">
                     {message && (
-                      <span className={`text-sm ${message.includes('エラー') ? 'text-red-600' : 'text-green-600'}`}>
+                      <span className={`text-sm ${message.includes('エラー') ? 'text-error' : 'text-success'}`}>
                         {message}
                       </span>
                     )}
@@ -570,7 +570,7 @@ export default function Settings() {
                                   />
                                   <button
                                     onClick={() => updateDeviceName(device.id)}
-                                    className="text-green-600 hover:text-green-700"
+                                    className="text-success hover:text-success"
                                   >
                                     <Save className="w-4 h-4" />
                                   </button>
@@ -611,7 +611,7 @@ export default function Settings() {
                             <button
                               onClick={() => deleteDevice(device.id)}
                               disabled={devices.length <= 1}
-                              className="text-red-600 hover:text-red-700 disabled:text-text-muted disabled:cursor-not-allowed p-1"
+                              className="text-error hover:text-error disabled:text-text-muted disabled:cursor-not-allowed p-1"
                               title={devices.length <= 1 ? "最後の登録デバイスは削除できません" : "この登録デバイスを削除"}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -625,15 +625,15 @@ export default function Settings() {
 
                 {message && (
                   <div className="mt-4">
-                    <span className={`text-sm ${message.includes('エラー') ? 'text-red-600' : 'text-green-600'}`}>
+                    <span className={`text-sm ${message.includes('エラー') ? 'text-error' : 'text-success'}`}>
                       {message}
                     </span>
                   </div>
                 )}
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
-                  <h4 className="font-medium text-yellow-800 mb-2">⚠️ 注意事項</h4>
-                  <ul className="text-sm text-yellow-700 space-y-1">
+                <div className="bg-warning-light border border-warning rounded-lg p-4 mt-6">
+                  <h4 className="font-medium text-warning mb-2">⚠️ 注意事項</h4>
+                  <ul className="text-sm text-warning space-y-1">
                     <li>• 識別名（太字）がメイン表示で、デバイス名は補助情報です</li>
                     <li>• 登録デバイスを削除すると、その識別名でログインできなくなります</li>
                     <li>• 新しいデバイスを追加するには、ログアウト後にデバイス登録を行ってください</li>
