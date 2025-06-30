@@ -34,14 +34,8 @@ Thumbs.db
 *.log
 logs/
 
-# Database
-volumes/postgres/
-
-# Uploads
-volumes/uploads/
-
-# Models
-volumes/models/
+# volumes
+volumes/
 
 # Docker
 .dockerignore
