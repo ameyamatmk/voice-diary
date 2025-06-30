@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { Mic, Square, Play, Pause, MessageSquare } from 'lucide-react'
 import '../types/speech-recognition'
+import { useFlashMessage } from './FlashMessage'
 
 type RecordingState = 'idle' | 'recording' | 'paused' | 'processing'
 
@@ -21,7 +22,9 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
   const [recordingTime, setRecordingTime] = useState(0)
   const [realtimeText, setRealtimeText] = useState('')
   const [isListening, setIsListening] = useState(false)
-  
+
+  const { showError, showWarning, FlashMessageContainer } = useFlashMessage()
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -30,23 +33,23 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
   // Web Speech APIの初期化
   useEffect(() => {
     if (!enableRealtimeTranscription) return
-    
+
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
       const recognition = new SpeechRecognition()
-      
+
       recognition.continuous = true
       recognition.interimResults = true
       recognition.lang = 'ja-JP'
-      
+
       recognition.onstart = () => {
         setIsListening(true)
       }
-      
+
       recognition.onresult = (event) => {
         let interimTranscript = ''
         let finalTranscript = ''
-        
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript
           if (event.results[i].isFinal) {
@@ -55,12 +58,12 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
             interimTranscript += transcript
           }
         }
-        
+
         // 確定テキスト + 仮確定テキストを表示
         setRealtimeText(prev => {
           const lines = prev.split('\n')
           const lastLine = lines[lines.length - 1]
-          
+
           if (finalTranscript) {
             // 確定テキストがある場合は追加
             return prev + finalTranscript + (interimTranscript ? ' ' + interimTranscript : '')
@@ -71,19 +74,19 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
           }
         })
       }
-      
+
       recognition.onerror = (event) => {
         console.log('Speech recognition error:', event.error)
         setIsListening(false)
       }
-      
+
       recognition.onend = () => {
         setIsListening(false)
       }
-      
+
       recognitionRef.current = recognition
     }
-    
+
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop()
@@ -117,44 +120,56 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
 
   const startRecording = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 44100,
           channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true
-        } 
+        }
       })
-      
+
       streamRef.current = stream
-      
+
       // MediaRecorder設定
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
       })
-      
+
       const chunks: Blob[] = []
-      
+
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunks.push(event.data)
         }
       }
-      
+
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(chunks, { type: 'audio/webm' })
+
+        // 録音時間が10秒未満の場合は保存しない
+        if (recordingTime < 10) {
+          showError(
+            '録音時間が短すぎます。10秒以上録音してください。',
+            '録音時間不足'
+          )
+          setRecordingState('idle')
+          setRecordingTime(0)
+          return
+        }
+
         onRecordingComplete?.(audioBlob)
         setRecordingState('idle')
         setRecordingTime(0)
       }
-      
+
       mediaRecorderRef.current = mediaRecorder
       mediaRecorder.start()
       setRecordingState('recording')
-      
+
       // Web Speech API開始
       startSpeechRecognition()
-      
+
       // タイマー開始
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
@@ -165,10 +180,13 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
           return prev + 1
         })
       }, 1000)
-      
+
     } catch (error) {
       console.error('録音開始エラー:', error)
-      alert('マイクにアクセスできませんでした。ブラウザの設定を確認してください。')
+      showError(
+        'マイクにアクセスできませんでした。ブラウザの設定を確認してください。',
+        'マイクアクセスエラー'
+      )
     }
   }, [onRecordingComplete, startSpeechRecognition])
 
@@ -176,10 +194,10 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
     if (mediaRecorderRef.current && recordingState === 'recording') {
       mediaRecorderRef.current.pause()
       setRecordingState('paused')
-      
+
       // Web Speech API停止
       stopSpeechRecognition()
-      
+
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
@@ -190,10 +208,10 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
     if (mediaRecorderRef.current && recordingState === 'paused') {
       mediaRecorderRef.current.resume()
       setRecordingState('recording')
-      
+
       // Web Speech API再開
       startSpeechRecognition()
-      
+
       // タイマー再開
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
@@ -212,10 +230,10 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
       mediaRecorderRef.current.stop()
       setRecordingState('processing')
     }
-    
+
     // Web Speech API停止・クリア
     stopSpeechRecognition()
-    
+
     // リソースクリーンアップ
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
@@ -284,96 +302,103 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
   }
 
   return (
-    <div className="bg-bg-secondary rounded-2xl p-8 shadow-lg border border-border">
-      <div className="text-center">
-        <h2 className="text-2xl font-semibold text-text-primary mb-6">
-          音声録音
-        </h2>
-        
-        {/* リアルタイム文字起こし表示 */}
-        {enableRealtimeTranscription && (recordingState === 'recording' || recordingState === 'paused') && (
-          <div className="mb-6">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <MessageSquare className="w-4 h-4 text-text-muted" />
-              <span className="text-sm font-medium text-text-muted">
-                リアルタイム文字起こし
-              </span>
-              {isListening && (
-                <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-              )}
+    <>
+      <FlashMessageContainer />
+      <div className="bg-bg-secondary rounded-2xl p-8 shadow-lg border border-border">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold text-text-primary mb-6">
+            音声録音
+          </h2>
+
+          {/* リアルタイム文字起こし表示 */}
+          {enableRealtimeTranscription && (
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <MessageSquare className="w-4 h-4 text-text-muted" />
+                <span className="text-sm font-medium text-text-muted">
+                  リアルタイム文字起こし
+                </span>
+                {isListening && (
+                  <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                )}
+              </div>
+              <div className="bg-bg-primary rounded-lg p-4 min-h-[120px] max-h-[200px] overflow-y-auto text-left border border-border">
+                {realtimeText ? (
+                  <p className="text-text-primary text-sm leading-relaxed whitespace-pre-wrap">
+                    {realtimeText}
+                  </p>
+                ) : (
+                  <p className="text-text-muted text-sm italic text-center flex items-center justify-center h-full">
+                    {isListening ? '音声を認識中...' : '文字起こし待機中'}
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="bg-bg-primary rounded-lg p-4 min-h-[120px] max-h-[200px] overflow-y-auto text-left border border-border">
-              {realtimeText ? (
-                <p className="text-text-primary text-sm leading-relaxed whitespace-pre-wrap">
-                  {realtimeText}
-                </p>
-              ) : (
-                <p className="text-text-muted text-sm italic text-center flex items-center justify-center h-full">
-                  {isListening ? '音声を認識中...' : '文字起こし待機中'}
-                </p>
-              )}
-            </div>
+          )}
+
+          {/* 録音時間 */}
+          <div className="text-3xl font-mono text-text-primary mb-6">
+            {formatTime(recordingTime)}
           </div>
-        )}
-        
-        {/* 録音状態表示 */}
-        {renderRecordingStatus()}
-        
-        {/* 録音時間 */}
-        <div className="text-3xl font-mono text-text-primary mb-6">
-          {formatTime(recordingTime)}
-        </div>
-        
-        {/* 録音制御ボタン */}
-        <div className="flex items-center justify-center gap-4 mb-4">
-          <button
-            onClick={
-              recordingState === 'idle' ? startRecording :
-              recordingState === 'recording' ? stopRecording :
-              recordingState === 'paused' ? resumeRecording :
-              undefined
-            }
-            disabled={recordingState === 'processing' || disabled}
-            className={`
+
+          {/* 録音制御ボタン */}
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <button
+              onClick={
+                recordingState === 'idle' ? startRecording :
+                  recordingState === 'recording' ? stopRecording :
+                    recordingState === 'paused' ? resumeRecording :
+                      undefined
+              }
+              disabled={recordingState === 'processing' || disabled}
+              className={`
               w-16 h-16 rounded-full text-white font-semibold
               flex items-center justify-center
               touch-target focus-visible transition-all duration-200
               ${getRecordingButtonStyle()}
             `}
-          >
-            {getRecordingButtonIcon()}
-          </button>
-          
-          {recordingState === 'recording' && (
-            <button
-              onClick={pauseRecording}
-              className="w-12 h-12 rounded-full bg-bg-tertiary text-text-primary hover:bg-border touch-target focus-visible transition-all duration-200 flex items-center justify-center"
             >
-              <Pause className="w-5 h-5" />
+              {getRecordingButtonIcon()}
             </button>
-          )}
-        </div>
-        
-        {/* 追加情報表示 */}
-        <div className="text-sm text-text-muted">
-          {recordingState === 'recording' && (
-            <div className="flex flex-col items-center gap-1">
-              <span>最大10分まで録音可能</span>
-              {enableRealtimeTranscription && (
-                <span className="text-xs">
-                  {isListening ? '🎤 音声認識中' : '🔇 音声認識待機中'}
+
+            {recordingState === 'recording' && (
+              <button
+                onClick={pauseRecording}
+                className="w-12 h-12 rounded-full bg-bg-tertiary text-text-primary hover:bg-border touch-target focus-visible transition-all duration-200 flex items-center justify-center"
+              >
+                <Pause className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
+          {/* 追加情報表示 */}
+          <div className="text-sm text-text-muted">
+            {recordingState === 'idle' && (
+              <div className="text-center">
+                <span>最低10秒、最大10分まで録音可能</span>
+              </div>
+            )}
+            {recordingState === 'recording' && (
+              <div className="flex flex-col items-center gap-1">
+                <span className={recordingTime < 10 ? "text-warning" : ""}>
+                  {recordingTime < 10 ? `あと${10 - recordingTime}秒で保存可能` : '最大10分まで録音可能'}
                 </span>
-              )}
+                {enableRealtimeTranscription && (
+                  <span className="text-xs">
+                    {isListening ? '🎤 音声認識中' : '🔇 音声認識待機中'}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {recordingTime >= 600 && (
+            <div className="mt-2 text-sm text-warning">
+              最大録音時間に達しました
             </div>
           )}
         </div>
-        
-        {recordingTime >= 600 && (
-          <div className="mt-2 text-sm text-warning">
-            最大録音時間に達しました
-          </div>
-        )}
       </div>
-    </div>
+    </>
   )
 }

@@ -32,6 +32,11 @@ async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_d
     if len(file_content) > 50 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="ファイルサイズが50MBを超えています")
     
+    # 音声ファイルの長さをチェック（10秒未満は拒否）
+    # 注意: これは簡易的なチェックです。正確な時間測定にはffprobeなどが必要
+    if len(file_content) < 10000:  # 約10秒未満の目安（簡易的）
+        raise HTTPException(status_code=400, detail="録音時間が短すぎます。10秒以上録音してください。")
+    
     # ユニークなファイル名生成
     file_id = str(uuid.uuid4())
     timestamp = datetime.now(JST).strftime("%Y%m%d_%H%M%S")
