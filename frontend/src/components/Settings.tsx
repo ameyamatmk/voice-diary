@@ -122,7 +122,7 @@ export default function Settings() {
     }
   };
 
-  const handleConfigChange = (key: keyof SettingsConfig, value: string | boolean) => {
+  const handleConfigChange = async (key: keyof SettingsConfig, value: string | boolean) => {
     const newConfig = { ...config, [key]: value };
     
     // API変更時にモデルもデフォルトに変更
@@ -139,6 +139,17 @@ export default function Settings() {
     }
     
     setConfig(newConfig);
+    
+    // 即時保存
+    try {
+      await api.saveSettings(newConfig);
+      setMessage('設定を保存しました');
+      setTimeout(() => setMessage(''), 2000);
+    } catch (error) {
+      setMessage('エラー: 設定の保存に失敗しました');
+      console.error('設定保存エラー:', error);
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
 
   const getAvailableModels = (api: string, type: 'transcribe' | 'summary') => {
@@ -224,7 +235,7 @@ export default function Settings() {
             <h2 className="text-2xl font-semibold text-text-primary">設定</h2>
           </div>
           <p className="text-text-secondary mt-2">
-            アプリケーションの設定を管理します
+            アプリケーションの設定を管理します（AI設定は変更時に自動保存されます）
           </p>
         </div>
 
@@ -436,39 +447,14 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* AI設定保存ボタン */}
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <div className="flex items-center gap-2">
-                  {message && (
-                    <span className={`text-sm ${message.includes('エラー') ? 'text-error' : 'text-success'}`}>
-                      {message}
-                    </span>
-                  )}
+              {/* メッセージ表示 */}
+              {message && (
+                <div className="flex items-center justify-center pt-4 border-t border-border">
+                  <span className={`text-sm ${message.includes('エラー') ? 'text-error' : 'text-success'}`}>
+                    {message}
+                  </span>
                 </div>
-                
-                <div className="flex gap-3">
-                  <button
-                    onClick={fetchSettings}
-                    className="px-4 py-2 text-text-600 hover:text-text-800 transition-colors flex items-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    リセット
-                  </button>
-                  
-                  <button
-                    onClick={saveSettings}
-                    disabled={loading}
-                    className="px-6 py-2 bg-accent-primary text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                  >
-                    {loading ? (
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    保存
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
