@@ -19,16 +19,12 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
 }) => {
   const [recordingState, setRecordingState] = useState<RecordingState>('idle')
   const [recordingTime, setRecordingTime] = useState(0)
-  const [audioLevel, setAudioLevel] = useState(0)
   const [realtimeText, setRealtimeText] = useState('')
   const [isListening, setIsListening] = useState(false)
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const audioContextRef = useRef<AudioContext | null>(null)
-  const analyserRef = useRef<AnalyserNode | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const animationRef = useRef<number | null>(null)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
 
   // Web Speech APIの初期化
@@ -132,17 +128,6 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
       
       streamRef.current = stream
       
-      // 音声レベル表示用のAudioContext設定
-      const audioContext = new AudioContext()
-      const analyser = audioContext.createAnalyser()
-      const source = audioContext.createMediaStreamSource(stream)
-      
-      analyser.fftSize = 256
-      source.connect(analyser)
-      
-      audioContextRef.current = audioContext
-      analyserRef.current = analyser
-      
       // MediaRecorder設定
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
@@ -161,7 +146,6 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
         onRecordingComplete?.(audioBlob)
         setRecordingState('idle')
         setRecordingTime(0)
-        setAudioLevel(0)
       }
       
       mediaRecorderRef.current = mediaRecorder
@@ -182,38 +166,11 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
         })
       }, 1000)
       
-      // 音声レベル監視開始
-      updateAudioLevel()
-      
     } catch (error) {
       console.error('録音開始エラー:', error)
       alert('マイクにアクセスできませんでした。ブラウザの設定を確認してください。')
     }
   }, [onRecordingComplete, startSpeechRecognition])
-
-  const updateAudioLevel = useCallback(() => {
-    if (!analyserRef.current) return
-    
-    const bufferLength = analyserRef.current.frequencyBinCount
-    const dataArray = new Uint8Array(bufferLength)
-    analyserRef.current.getByteTimeDomainData(dataArray)
-    
-    // RMS (Root Mean Square) 計算でより正確な音声レベルを取得
-    let sum = 0
-    for (let i = 0; i < bufferLength; i++) {
-      const sample = (dataArray[i] - 128) / 128 // -1から1の範囲に正規化
-      sum += sample * sample
-    }
-    const rms = Math.sqrt(sum / bufferLength)
-    
-    // 音声レベルを0-1の範囲に調整（感度を上げる）
-    const level = Math.min(rms * 5, 1)
-    setAudioLevel(level)
-    
-    if (recordingState === 'recording') {
-      animationRef.current = requestAnimationFrame(updateAudioLevel)
-    }
-  }, [recordingState])
 
   const pauseRecording = useCallback(() => {
     if (mediaRecorderRef.current && recordingState === 'recording') {
@@ -225,9 +182,6 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
       
       if (timerRef.current) {
         clearInterval(timerRef.current)
-      }
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
       }
     }
   }, [recordingState, stopSpeechRecognition])
@@ -250,11 +204,8 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
           return prev + 1
         })
       }, 1000)
-      
-      // 音声レベル監視再開
-      updateAudioLevel()
     }
-  }, [recordingState, updateAudioLevel, startSpeechRecognition])
+  }, [recordingState, startSpeechRecognition])
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current) {
@@ -271,12 +222,6 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
     }
     if (timerRef.current) {
       clearInterval(timerRef.current)
-    }
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current)
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close()
     }
   }, [stopSpeechRecognition])
 
@@ -306,30 +251,34 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
     }
   }
 
-  const renderAudioLevelBars = () => {
-    const bars = Array.from({ length: 20 }, (_, i) => {
-      const barThreshold = i / 20 // 0から1の範囲
-      const isActive = audioLevel > barThreshold
-      const height = isActive ? Math.max(20, audioLevel * 80) : 10 // 最小20%, 最大80%
-      
-      return (
-        <div
-          key={i}
-          className={`w-2 rounded-full transition-all duration-100 ${
-            isActive ? 'bg-success' : 'bg-border'
-          }`}
-          style={{ height: `${height}%` }}
-        />
-      )
-    })
-    
+  const renderRecordingStatus = () => {
     return (
-      <div className="flex items-end justify-center gap-1 h-24 w-full bg-bg-tertiary rounded-lg mb-6 p-4">
-        {recordingState === 'recording' ? bars : (
-          <div className="text-text-muted text-sm flex items-center justify-center h-full">
-            音声レベル表示
-          </div>
-        )}
+      <div className="flex items-center justify-center h-24 w-full bg-bg-tertiary rounded-lg mb-6 p-4 border border-border">
+        <div className="text-center">
+          {recordingState === 'idle' && (
+            <div className="text-text-muted text-sm">
+              録音ボタンを押して開始
+            </div>
+          )}
+          {recordingState === 'recording' && (
+            <div className="text-center">
+              <div className="w-4 h-4 bg-recording rounded-full animate-pulse mx-auto mb-2"></div>
+              <div className="text-recording text-sm font-medium">録音中...</div>
+            </div>
+          )}
+          {recordingState === 'paused' && (
+            <div className="text-center">
+              <div className="w-4 h-4 bg-warning rounded-full mx-auto mb-2"></div>
+              <div className="text-warning text-sm font-medium">一時停止中</div>
+            </div>
+          )}
+          {recordingState === 'processing' && (
+            <div className="text-center">
+              <div className="w-4 h-4 border-2 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+              <div className="text-accent-primary text-sm font-medium">処理中...</div>
+            </div>
+          )}
+        </div>
       </div>
     )
   }
@@ -367,8 +316,8 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
           </div>
         )}
         
-        {/* 音声レベル表示 */}
-        {renderAudioLevelBars()}
+        {/* 録音状態表示 */}
+        {renderRecordingStatus()}
         
         {/* 録音時間 */}
         <div className="text-3xl font-mono text-text-primary mb-6">
@@ -405,12 +354,11 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
           )}
         </div>
         
-        {/* 状態表示 */}
+        {/* 追加情報表示 */}
         <div className="text-sm text-text-muted">
-          {recordingState === 'idle' && '録音ボタンを押して開始'}
           {recordingState === 'recording' && (
             <div className="flex flex-col items-center gap-1">
-              <span>録音中... (最大10分)</span>
+              <span>最大10分まで録音可能</span>
               {enableRealtimeTranscription && (
                 <span className="text-xs">
                   {isListening ? '🎤 音声認識中' : '🔇 音声認識待機中'}
@@ -418,8 +366,6 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
               )}
             </div>
           )}
-          {recordingState === 'paused' && '一時停止中'}
-          {recordingState === 'processing' && '処理中...'}
         </div>
         
         {recordingTime >= 600 && (
