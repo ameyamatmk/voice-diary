@@ -1,6 +1,25 @@
 import { DiaryEntry, DiaryEntryListResponse } from '@/types'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+// API URLを環境に応じて決定
+function getApiBaseUrl(): string {
+  // ブラウザ環境での判定
+  if (typeof window !== 'undefined') {
+    // 開発環境（localhost）の場合
+    if (window.location.hostname === 'localhost') {
+      return 'http://localhost:8000'
+    }
+    
+    // 本番環境（homelab）の場合
+    // フロントエンドと同じドメインで /api/* パスを使用
+    // Nginx Proxy Managerで /api/* → voice-diary-api:8000 にプロキシ設定
+    return `${window.location.protocol}//${window.location.host}`
+  }
+  
+  // サーバーサイド（SSR時）の場合はコンテナ名でアクセス
+  return 'http://voice-diary-api:8000'
+}
+
+const API_BASE_URL = getApiBaseUrl()
 
 export const api = {
   // 日記エントリ関連
