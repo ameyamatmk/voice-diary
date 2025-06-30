@@ -607,11 +607,11 @@ verification = verify_authentication_response(
 
 ### 開発環境構成（実装済み）
 ```yaml
-# compose.dev.yaml - 開発専用Docker Compose設定
+# compose.yaml - Docker Compose設定
 services:
-  voice-diary-web-dev:    # Next.js開発サーバー（ポート3000）
-  voice-diary-api-dev:    # FastAPI開発サーバー（ポート8000）
-  voice-diary-db-dev:     # PostgreSQL開発DB（ポート5432）
+  voice-diary-web:    # Next.js開発サーバー（ポート3000）
+  voice-diary-api:    # FastAPI開発サーバー（ポート8000）
+  voice-diary-db:     # PostgreSQL開発DB（ポート5432）
 
 # 開発環境固有設定
 volumes:
@@ -623,7 +623,7 @@ volumes:
 environment:
   - TRANSCRIBE_API=mock (開発環境はモック)
   - SUMMARY_API=mock
-  - DATABASE_URL=postgresql://voicediaryuser:voicediarypass@voice-diary-db-dev:5432/voicediary
+  - DATABASE_URL=postgresql://voicediaryuser:voicediarypass@voice-diary-db:5432/voicediary
 ```
 
 ### 環境変数設定
