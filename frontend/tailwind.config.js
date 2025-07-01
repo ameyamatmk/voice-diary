@@ -20,6 +20,11 @@ module.exports = {
         'text-secondary': 'var(--text-secondary)',
         'text-muted': 'var(--text-muted)',
         'text-subtle': 'var(--text-subtle)',
+        'text-400': 'var(--text-muted)',
+        'text-500': 'var(--text-muted)',
+        'text-600': 'var(--text-secondary)',
+        'text-700': 'var(--text-secondary)',
+        'text-900': 'var(--text-primary)',
         
         // アクセント色
         'accent-primary': 'var(--accent-primary)',

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, RefreshCw, ChevronDown, User, Smartphone, Trash2, Edit2 } from 'lucide-react';
+import { Settings as SettingsIcon, Save, RefreshCw, ChevronDown, User, Smartphone, Trash2, Edit2, Monitor, Palette } from 'lucide-react';
 import { api } from '@/lib/api';
 import { AuthAPI } from '@/lib/auth';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SettingsConfig {
   transcribe_api: string;
@@ -57,7 +58,8 @@ interface Device {
 
 export default function Settings() {
   const { user, refreshUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<'ai' | 'profile' | 'devices'>('ai');
+  const { theme, setTheme } = useTheme();
+  const [activeTab, setActiveTab] = useState<'ai' | 'profile' | 'devices' | 'theme'>('ai');
   
   // AI設定
   const [config, setConfig] = useState<SettingsConfig>({
@@ -75,6 +77,7 @@ export default function Settings() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [editingDevice, setEditingDevice] = useState<string | null>(null);
   const [newDeviceName, setNewDeviceName] = useState('');
+  
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -225,6 +228,13 @@ export default function Settings() {
     setNewDeviceName('');
   };
 
+  // テーマ変更
+  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+    setTheme(newTheme);
+    setMessage('テーマを変更しました');
+    setTimeout(() => setMessage(''), 2000);
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-bg-secondary rounded-xl shadow-md border border-border">
@@ -274,6 +284,17 @@ export default function Settings() {
               <Smartphone className="w-4 h-4 inline mr-2" />
               デバイス管理
             </button>
+            <button
+              onClick={() => setActiveTab('theme')}
+              className={`px-6 py-4 text-sm font-medium ${
+                activeTab === 'theme'
+                  ? 'text-accent-primary border-b-2 border-accent-primary'
+                  : 'text-text-muted hover:text-text-secondary'
+              }`}
+            >
+              <Palette className="w-4 h-4 inline mr-2" />
+              テーマ
+            </button>
           </nav>
         </div>
 
@@ -284,53 +305,53 @@ export default function Settings() {
             <div className="space-y-8">
               {/* 文字起こし設定 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                   🎤 文字起こし設定
                 </h3>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-text-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       APIプロバイダー
                     </label>
                     <div className="relative">
                       <select
                         value={config.transcribe_api}
                         onChange={(e) => handleConfigChange('transcribe_api', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-bg-surface text-text-900 border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-bg-primary text-text-primary border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
                       >
                         {TRANSCRIBE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value} className="bg-bg-surface text-text-900">
+                          <option key={option.value} value={option.value} className="bg-bg-primary text-text-primary">
                             {option.label}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                     </div>
-                    <p className="text-sm text-text-500 mt-1">
+                    <p className="text-sm text-text-muted mt-1">
                       {TRANSCRIBE_OPTIONS.find(opt => opt.value === config.transcribe_api)?.description}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       モデル
                     </label>
                     <div className="relative">
                       <select
                         value={config.transcribe_model}
                         onChange={(e) => handleConfigChange('transcribe_model', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-bg-surface text-text-900 border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-bg-primary text-text-primary border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
                       >
                         {getAvailableModels(config.transcribe_api, 'transcribe').map((model) => (
-                          <option key={model.value} value={model.value} className="bg-bg-surface text-text-900">
+                          <option key={model.value} value={model.value} className="bg-bg-primary text-text-primary">
                             {model.label}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                     </div>
-                    <p className="text-sm text-text-500 mt-1">
+                    <p className="text-sm text-text-muted mt-1">
                       {getAvailableModels(config.transcribe_api, 'transcribe')
                         .find(model => model.value === config.transcribe_model)?.description}
                     </p>
@@ -340,53 +361,53 @@ export default function Settings() {
 
               {/* 要約設定 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                   📝 要約設定
                 </h3>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-text-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       APIプロバイダー
                     </label>
                     <div className="relative">
                       <select
                         value={config.summary_api}
                         onChange={(e) => handleConfigChange('summary_api', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-bg-surface text-text-900 border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-bg-primary text-text-primary border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
                       >
                         {SUMMARY_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value} className="bg-bg-surface text-text-900">
+                          <option key={option.value} value={option.value} className="bg-bg-primary text-text-primary">
                             {option.label}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                     </div>
-                    <p className="text-sm text-text-500 mt-1">
+                    <p className="text-sm text-text-muted mt-1">
                       {SUMMARY_OPTIONS.find(opt => opt.value === config.summary_api)?.description}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-text-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       モデル
                     </label>
                     <div className="relative">
                       <select
                         value={config.summary_model}
                         onChange={(e) => handleConfigChange('summary_model', e.target.value)}
-                        className="w-full px-3 py-2 pr-10 bg-bg-surface text-text-900 border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-bg-primary text-text-primary border border-border rounded-lg focus:ring-2 focus:ring-accent-primary focus:border-accent-primary appearance-none"
                       >
                         {getAvailableModels(config.summary_api, 'summary').map((model) => (
-                          <option key={model.value} value={model.value} className="bg-bg-surface text-text-900">
+                          <option key={model.value} value={model.value} className="bg-bg-primary text-text-primary">
                             {model.label}
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-400 pointer-events-none" />
+                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                     </div>
-                    <p className="text-sm text-text-500 mt-1">
+                    <p className="text-sm text-text-muted mt-1">
                       {getAvailableModels(config.summary_api, 'summary')
                         .find(model => model.value === config.summary_model)?.description}
                     </p>
@@ -396,7 +417,7 @@ export default function Settings() {
 
               {/* リアルタイム文字起こし設定 */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text-900 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
                   ⚡ リアルタイム文字起こし設定
                 </h3>
                 
@@ -411,10 +432,10 @@ export default function Settings() {
                           className="w-4 h-4 text-accent-primary bg-bg-tertiary border-border rounded focus:ring-accent-primary focus:ring-2"
                         />
                         <div>
-                          <span className="text-sm font-medium text-text-900">
+                          <span className="text-sm font-medium text-text-primary">
                             録音中のリアルタイム文字起こしを有効にする
                           </span>
-                          <p className="text-xs text-text-600 mt-1">
+                          <p className="text-xs text-text-secondary mt-1">
                             Web Speech API を使用して録音中にリアルタイムで文字起こしを表示します（参考用・無料）
                           </p>
                         </div>
@@ -518,6 +539,106 @@ export default function Settings() {
                     )}
                     保存
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* テーマ設定タブ */}
+          {activeTab === 'theme' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-text-primary mb-4">テーマ設定</h3>
+                <p className="text-text-secondary mb-6">
+                  アプリケーションの外観テーマを選択してください。システム設定に従うことも可能です。
+                </p>
+
+                <div className="space-y-4">
+                  {/* ライトテーマ */}
+                  <div
+                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                      theme === 'light'
+                        ? 'border-accent-primary bg-accent-primary/5'
+                        : 'border-border hover:border-accent-primary/50'
+                    }`}
+                    onClick={() => handleThemeChange('light')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center">
+                        <div className={`w-2 h-2 bg-accent-primary rounded-full ${theme === 'light' ? 'opacity-100' : 'opacity-0'}`} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-text-primary">ライトテーマ</h4>
+                        <p className="text-sm text-text-secondary">明るい背景色で表示します</p>
+                      </div>
+                      <div className="w-12 h-8 bg-white border border-gray-300 rounded flex items-center justify-end pr-1">
+                        <div className="w-2 h-2 bg-gray-800 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ダークテーマ */}
+                  <div
+                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                      theme === 'dark'
+                        ? 'border-accent-primary bg-accent-primary/5'
+                        : 'border-border hover:border-accent-primary/50'
+                    }`}
+                    onClick={() => handleThemeChange('dark')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center">
+                        <div className={`w-2 h-2 bg-accent-primary rounded-full ${theme === 'dark' ? 'opacity-100' : 'opacity-0'}`} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-text-primary">ダークテーマ</h4>
+                        <p className="text-sm text-text-secondary">暗い背景色で表示します</p>
+                      </div>
+                      <div className="w-12 h-8 bg-gray-800 border border-gray-600 rounded flex items-center justify-start pl-1">
+                        <div className="w-2 h-2 bg-white rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* システム設定 */}
+                  <div
+                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                      theme === 'system'
+                        ? 'border-accent-primary bg-accent-primary/5'
+                        : 'border-border hover:border-accent-primary/50'
+                    }`}
+                    onClick={() => handleThemeChange('system')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center">
+                        <div className={`w-2 h-2 bg-accent-primary rounded-full ${theme === 'system' ? 'opacity-100' : 'opacity-0'}`} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-text-primary">システム設定</h4>
+                        <p className="text-sm text-text-secondary">デバイスのシステム設定に従います</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Monitor className="w-5 h-5 text-text-muted" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {message && (
+                  <div className="mt-4">
+                    <span className={`text-sm ${message.includes('エラー') ? 'text-error' : 'text-success'}`}>
+                      {message}
+                    </span>
+                  </div>
+                )}
+
+                <div className="bg-info-light border border-info rounded-lg p-4 mt-6">
+                  <h4 className="font-medium text-info mb-2">💡 テーマについて</h4>
+                  <ul className="text-sm text-info space-y-1">
+                    <li>• テーマ設定は即座に適用され、自動保存されます</li>
+                    <li>• システム設定を選択すると、デバイスのダーク/ライトモード設定に従います</li>
+                    <li>• ページを再読み込みしても設定は保持されます</li>
+                  </ul>
                 </div>
               </div>
             </div>
