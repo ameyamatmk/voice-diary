@@ -29,6 +29,7 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recordingTimeRef = useRef<number>(0)
 
   // Web Speech APIの初期化
   useEffect(() => {
@@ -148,19 +149,21 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
         const audioBlob = new Blob(chunks, { type: 'audio/webm' })
 
         // 録音時間が10秒未満の場合は保存しない
-        if (recordingTime < 10) {
+        if (recordingTimeRef.current < 10) {
           showError(
             '録音時間が短すぎます。10秒以上録音してください。',
             '録音時間不足'
           )
           setRecordingState('idle')
           setRecordingTime(0)
+          recordingTimeRef.current = 0
           return
         }
 
         onRecordingComplete?.(audioBlob)
         setRecordingState('idle')
         setRecordingTime(0)
+        recordingTimeRef.current = 0
       }
 
       mediaRecorderRef.current = mediaRecorder
@@ -173,11 +176,13 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
       // タイマー開始
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
-          if (prev >= 600) { // 10分制限
+          const newTime = prev + 1
+          recordingTimeRef.current = newTime
+          if (newTime >= 600) { // 10分制限
             stopRecording()
-            return prev
+            return newTime
           }
-          return prev + 1
+          return newTime
         })
       }, 1000)
 
@@ -215,11 +220,13 @@ export const RecordingInterface: React.FC<RecordingInterfaceProps> = ({
       // タイマー再開
       timerRef.current = setInterval(() => {
         setRecordingTime(prev => {
-          if (prev >= 600) {
+          const newTime = prev + 1
+          recordingTimeRef.current = newTime
+          if (newTime >= 600) {
             stopRecording()
-            return prev
+            return newTime
           }
-          return prev + 1
+          return newTime
         })
       }, 1000)
     }
