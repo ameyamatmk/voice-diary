@@ -8,6 +8,12 @@ import '../globals.css'
 export const metadata: Metadata = {
   title: 'Voice Diary',
   description: '音声で記録する日記アプリケーション',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon.svg', type: 'image/svg+xml', sizes: '512x512' }
+    ]
+  }
 }
 
 export default function RootLayout({
